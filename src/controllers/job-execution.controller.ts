@@ -32,7 +32,7 @@ interface RateLimitEntry {
 export class JobExecutionController {
   private readonly logger = new Logger(JobExecutionController.name);
   private readonly rateLimitMap = new Map<string, RateLimitEntry>();
-  private readonly RATE_LIMIT_WINDOW = 10000; // 10 seconds
+  private readonly RATE_LIMIT_WINDOW = 1000; // 1 second
   private readonly MAX_EXECUTIONS_PER_WINDOW = 1;
 
   constructor(

@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { AppService } from './app.service';
+import { environment } from 'frontend/src/environments/environment';
 
 @Controller()
 export class AppController {
@@ -10,6 +11,7 @@ export class AppController {
 
   @Get()
   root(@Res() res: Response) {
+    console.log(`init!!!!${environment.apiUrl}`);
     const indexPath = join(process.cwd(), 'public', 'browser', 'index.html');
     return res.sendFile(indexPath);
   }

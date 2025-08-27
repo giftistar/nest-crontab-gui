@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Delete,
   Param,
   Query,
   ParseUUIDPipe,
@@ -326,6 +327,43 @@ export class LogsController {
         failureCount: Number(stat.failureCount) || 0,
         averageResponseTime: Math.round(Number(stat.averageResponseTime) || 0),
       })),
+    };
+  }
+
+  @Delete('jobs/:id/logs')
+  @ApiOperation({
+    summary: 'Clear execution logs for a specific job',
+    description: 'Delete all execution logs for a specific cron job',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'UUID of the cron job',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Logs cleared successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Job not found',
+  })
+  async clearJobLogs(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<{ message: string; deletedCount: number }> {
+    // Verify job exists
+    const job = await this.cronJobRepository.findOne({ where: { id } });
+    if (!job) {
+      throw new NotFoundException(`Job with ID "${id}" not found`);
+    }
+
+    // Delete all logs for this job
+    const result = await this.executionLogRepository.delete({ job: { id } });
+    
+    return {
+      message: 'Logs cleared successfully',
+      deletedCount: result.affected || 0,
     };
   }
 }

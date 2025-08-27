@@ -60,7 +60,7 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   isViewingDetails = false; // Track if user is viewing log details
   
   // Tab management
-  selectedTabIndex = 0; // Preserve current tab
+  selectedTabIndex = 1; // Start with history tab (index 1)
   
   // Table columns - Added 'response' column
   displayedColumns: string[] = ['executedAt', 'status', 'duration', 'httpStatus', 'response', 'triggeredManually', 'actions'];
@@ -361,5 +361,31 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
 
   onTabChange(index: number): void {
     this.selectedTabIndex = index;
+  }
+
+  clearLogs(): void {
+    if (!this.job) return;
+
+    if (confirm('Are you sure you want to clear all execution history for this job? This action cannot be undone.')) {
+      this.jobService.clearJobLogs(this.job.id)
+        .pipe(
+          catchError(error => {
+            console.error('Error clearing logs:', error);
+            // Error will be displayed by the interceptor
+            return of(null);
+          })
+        )
+        .subscribe(result => {
+          if (result) {
+            this.snackBar.open(`Cleared ${result.deletedCount} log entries`, 'Close', {
+              duration: 3000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top'
+            });
+            // Refresh logs after clearing
+            this.loadLogs();
+          }
+        });
+    }
   }
 }

@@ -139,6 +139,14 @@
             <mat-card-header>
               <mat-card-title>Execution History</mat-card-title>
               <mat-card-subtitle>Recent job executions and their results</mat-card-subtitle>
+              <span class="header-spacer"></span>
+              <button mat-stroked-button color="warn" 
+                      (click)="clearLogs()"
+                      [disabled]="totalLogs === 0"
+                      matTooltip="Clear all execution history">
+                <mat-icon>delete_sweep</mat-icon>
+                Clear History
+              </button>
             </mat-card-header>
             
             <mat-card-content>

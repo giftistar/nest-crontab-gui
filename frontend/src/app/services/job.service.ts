@@ -111,4 +111,8 @@ export class JobService {
 
     return this.http.get<LogStatistics>(`${this.apiUrl}/logs/stats`, { params });
   }
+
+  clearJobLogs(id: string): Observable<{ message: string; deletedCount: number }> {
+    return this.http.delete<{ message: string; deletedCount: number }>(`${this.apiUrl}/jobs/${id}/logs`);
+  }
 }
