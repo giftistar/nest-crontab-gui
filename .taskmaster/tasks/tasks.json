@@ -6,7 +6,7 @@
         "title": "Initialize NestJS Project Structure",
         "description": "Set up the foundational NestJS TypeScript project with proper directory structure, dependencies, and configuration files",
         "details": "Use NestJS CLI to generate new project with TypeScript. Install core dependencies: @nestjs/core, @nestjs/common, @nestjs/platform-express, @nestjs/typeorm, @nestjs/schedule, @nestjs/config, @nestjs/swagger, typeorm, sqlite3, reflect-metadata, rxjs. Create src/main.ts entry point, app.module.ts root module, and basic folder structure (controllers/, services/, entities/, dto/). Configure tsconfig.json and nest-cli.json. Set up package.json scripts for development and production builds.",
-        "testStrategy": "Verify project compiles with 'npm run build', starts with 'npm run start', and serves on port 3000. Check that NestJS application context initializes without errors and basic health endpoint responds.",
+        "testStrategy": "Verify project compiles with 'npm run build', starts with 'npm run start', and serves on port 4000. Check that NestJS application context initializes without errors and basic health endpoint responds.",
         "priority": "high",
         "dependencies": [],
         "status": "done",
@@ -49,7 +49,7 @@
             "dependencies": [
               "1.3"
             ],
-            "details": "Configure nest-cli.json build settings. Add npm scripts for start, start:dev, build, test. Test project builds successfully with 'npm run build' and starts on port 3000 with 'npm run start:dev'. Verify health endpoint responds correctly.",
+            "details": "Configure nest-cli.json build settings. Add npm scripts for start, start:dev, build, test. Test project builds successfully with 'npm run build' and starts on port 4000 with 'npm run start:dev'. Verify health endpoint responds correctly.",
             "status": "done",
             "testStrategy": ""
           }
@@ -625,7 +625,7 @@
         "id": 10,
         "title": "Configure Docker Container and Production Build",
         "description": "Create multi-stage Dockerfile with production-ready configuration and deployment setup",
-        "details": "Create Dockerfile with multi-stage build: Stage 1 - Node.js build environment, install dependencies, build Angular frontend and NestJS backend. Stage 2 - Alpine Linux runtime, copy built artifacts, expose port 3000. Configure NestJS to serve Angular static files from dist/. Set up environment variables: PORT, DB_PATH, NODE_ENV. Create docker-compose.yml example with volume mounts for data persistence. Add .dockerignore file. Configure production logging, health checks using @nestjs/terminus. Set up graceful shutdown handling. Add README.md with deployment instructions and API documentation links.",
+        "details": "Create Dockerfile with multi-stage build: Stage 1 - Node.js build environment, install dependencies, build Angular frontend and NestJS backend. Stage 2 - Alpine Linux runtime, copy built artifacts, expose port 4000. Configure NestJS to serve Angular static files from dist/. Set up environment variables: PORT, DB_PATH, NODE_ENV. Create docker-compose.yml example with volume mounts for data persistence. Add .dockerignore file. Configure production logging, health checks using @nestjs/terminus. Set up graceful shutdown handling. Add README.md with deployment instructions and API documentation links.",
         "testStrategy": "Build Docker image and test container startup, verify all endpoints work in container. Test volume persistence by restarting container. Load testing with multiple concurrent jobs. Verify health checks and graceful shutdown work correctly.",
         "priority": "high",
         "dependencies": [
@@ -639,7 +639,7 @@
             "title": "Create multi-stage Dockerfile with build and runtime stages",
             "description": "Implement Dockerfile with Stage 1 (Node.js build environment) and Stage 2 (Alpine Linux runtime)",
             "dependencies": [],
-            "details": "Stage 1: Use node:18-alpine as build stage, set WORKDIR, copy package files, run npm install, copy source code, build Angular frontend with ng build --prod, build NestJS backend with npm run build. Stage 2: Use node:18-alpine as runtime, copy built artifacts from stage 1, install only production dependencies, set proper user permissions, expose port 3000.",
+            "details": "Stage 1: Use node:18-alpine as build stage, set WORKDIR, copy package files, run npm install, copy source code, build Angular frontend with ng build --prod, build NestJS backend with npm run build. Stage 2: Use node:18-alpine as runtime, copy built artifacts from stage 1, install only production dependencies, set proper user permissions, expose port 4000.",
             "status": "done",
             "testStrategy": ""
           },

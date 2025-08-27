@@ -14,7 +14,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "docker:build": "docker build -t nest-crontab-gui .",
-    "docker:run": "docker run -d -p 3000:3000 --name nest-crontab-gui -v $(pwd)/data:/app/data nest-crontab-gui",
+    "docker:run": "docker run -d -p 4000:4000 --name nest-crontab-gui -v $(pwd)/data:/app/data nest-crontab-gui",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",

@@ -7,10 +7,10 @@ services:
       dockerfile: Dockerfile
     container_name: nest-crontab-gui
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-4000}:4000"
     environment:
       - NODE_ENV=production
-      - PORT=${PORT:-3000}
+      - PORT=${PORT:-4000}
       - DB_PATH=/app/data/database.sqlite
       - LOG_RETENTION_DAYS=${LOG_RETENTION_DAYS:-3}
       - LOG_CLEANUP_ENABLED=${LOG_CLEANUP_ENABLED:-true}

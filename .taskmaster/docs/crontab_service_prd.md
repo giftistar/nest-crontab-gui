@@ -184,7 +184,7 @@ export class ExecutionLog {
 - **Framework:** NestJS application
 - **Storage:** SQLite database file with TypeORM (persistent volume)
 - **Memory:** ~256MB RAM minimum (NestJS overhead)
-- **Network:** HTTP port (configurable, default 3000)
+- **Network:** HTTP port (configurable, default 4000)
 - **Platform:** Any Docker-compatible environment
 
 # Development Roadmap  
@@ -315,16 +315,16 @@ export class ExecutionLog {
 - **HTTP Timeout:** 30 seconds default, configurable via @nestjs/config
 - **Log Cleanup:** Daily cleanup service removes entries >3 days old
 - **API Documentation:** Auto-generated Swagger docs at /api endpoint
-- **Port Configuration:** Environment variable PORT (default 3000)
+- **Port Configuration:** Environment variable PORT (default 4000)
 - **Database Location:** Configurable via DB_PATH environment variable
 
 ## Example Docker Usage
 ```bash
 docker run -d \
   --name nest-crontab-gui \
-  -p 3000:3000 \
+  -p 4000:4000 \
   -v /host/data:/app/data \
-  -e PORT=3000 \
+  -e PORT=4000 \
   -e DB_PATH=/app/data/crontab.db \
   -e NODE_ENV=production \
   nest-crontab-gui:latest

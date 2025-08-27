@@ -55,9 +55,9 @@ A comprehensive web-based cron job management system built with NestJS backend a
    ```
 
 4. **Access the application**
-   - Web Interface: http://localhost:3000
-   - API Documentation: http://localhost:3000/api/docs
-   - Health Check: http://localhost:3000/health
+   - Web Interface: http://localhost:4000
+   - API Documentation: http://localhost:4000/api/docs
+   - Health Check: http://localhost:4000/health
 
 ### Using Docker
 
@@ -68,7 +68,7 @@ docker build -t nest-crontab-gui .
 # Run the container
 docker run -d \
   --name crontab-gui \
-  -p 3000:3000 \
+  -p 4000:4000 \
   -v crontab-data:/app/data \
   -e TZ=UTC \
   nest-crontab-gui
@@ -79,7 +79,7 @@ docker run -d \
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NODE_ENV` | `production` | Application environment |
-| `PORT` | `3000` | Application port |
+| `PORT` | `4000` | Application port |
 | `DB_PATH` | `/app/data/database.sqlite` | SQLite database file path |
 | `LOG_RETENTION_DAYS` | `3` | Days to retain execution logs |
 | `LOG_CLEANUP_ENABLED` | `true` | Enable automatic log cleanup |
@@ -87,7 +87,7 @@ docker run -d \
 | `TZ` | `UTC` | Timezone for job execution |
 | `CORS_ORIGINS` | `*` | CORS allowed origins (comma-separated) |
 | `MAX_REQUEST_SIZE` | `10mb` | Maximum request body size |
-| `REQUEST_TIMEOUT` | `30000` | HTTP request timeout (ms) |
+| `REQUEST_TIMEOUT` | `40000` | HTTP request timeout (ms) |
 | `MAX_CONCURRENT_JOBS` | `10` | Maximum concurrent job executions |
 | `JOB_RETRY_COUNT` | `3` | Number of retry attempts for failed jobs |
 | `JOB_RETRY_DELAY` | `1000` | Delay between retries (ms) |
@@ -97,7 +97,7 @@ docker run -d \
 The application provides a comprehensive REST API documented with Swagger/OpenAPI.
 
 ### Base URL
-- Development: `http://localhost:3000`
+- Development: `http://localhost:4000`
 - API Base Path: `/api`
 
 ### Key Endpoints
@@ -134,7 +134,7 @@ GET    /health/ready     # Readiness probe (database check)
 ```
 
 ### API Documentation UI
-Access the interactive Swagger UI at: `http://localhost:3000/api/docs`
+Access the interactive Swagger UI at: `http://localhost:4000/api/docs`
 
 ## Job Configuration
 
@@ -232,8 +232,8 @@ Simple interval format:
 
 3. **Access the application**
    - Frontend: http://localhost:4200
-   - Backend API: http://localhost:3000
-   - API Docs: http://localhost:3000/api/docs
+   - Backend API: http://localhost:4000
+   - API Docs: http://localhost:4000/api/docs
 
 ### Building for Production
 
@@ -273,7 +273,7 @@ services:
     image: nest-crontab-gui:latest
     container_name: nest-crontab-gui
     ports:
-      - "3000:3000"
+      - "4000:4000"
     environment:
       - NODE_ENV=production
       - TZ=America/New_York
@@ -283,7 +283,7 @@ services:
       - crontab-logs:/app/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -314,7 +314,7 @@ spec:
       - name: crontab-gui
         image: nest-crontab-gui:latest
         ports:
-        - containerPort: 3000
+        - containerPort: 4000
         env:
         - name: NODE_ENV
           value: "production"
@@ -326,13 +326,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 3000
+            port: 4000
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 3000
+            port: 4000
           initialDelaySeconds: 5
           periodSeconds: 5
       volumes:
@@ -350,7 +350,7 @@ spec:
   ports:
   - protocol: TCP
     port: 80
-    targetPort: 3000
+    targetPort: 4000
 ```
 
 ## Monitoring and Troubleshooting
@@ -411,7 +411,7 @@ docker restart nest-crontab-gui
 docker stats nest-crontab-gui
 
 # Check application health
-curl http://localhost:3000/health
+curl http://localhost:4000/health
 
 # Reduce log retention period
 docker exec -e LOG_RETENTION_DAYS=1 nest-crontab-gui
@@ -498,7 +498,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- 📖 [API Documentation](http://localhost:3000/api/docs)
+- 📖 [API Documentation](http://localhost:4000/api/docs)
 - 🐛 [Issue Tracker](https://github.com/your-repo/issues)
 - 💬 [Discussions](https://github.com/your-repo/discussions)
 
@@ -509,3 +509,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Angular Material](https://material.angular.io/) - UI components
 - [TypeORM](https://typeorm.io/) - Database ORM
 - [Docker](https://www.docker.com/) - Containerization platform
+
+
+  docker run -d -p 4000:4000 -v ./data:/app/data giftistar/nest-crontab-gui:0.0.1

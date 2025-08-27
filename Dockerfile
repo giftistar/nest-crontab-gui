@@ -16,7 +16,7 @@ RUN npm ci && \
 COPY . .
 
 # Build Angular frontend
-RUN cd frontend && npm run build
+RUN cd frontend && npm run build:prod
 
 # Build NestJS backend
 RUN npm run build
@@ -51,16 +51,16 @@ RUN mkdir -p /app/data && \
 USER nodejs
 
 # Expose application port
-EXPOSE 3000
+EXPOSE 4000
 
 # Set environment variables
 ENV NODE_ENV=production \
-    PORT=3000 \
+    PORT=4000 \
     DB_PATH=/app/data/database.sqlite
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"
+  CMD node -e "require('http').get('http://localhost:4000/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
