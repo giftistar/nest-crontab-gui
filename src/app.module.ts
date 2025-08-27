@@ -14,9 +14,9 @@ import * as path from 'path';
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
-      database: path.join(process.cwd(), 'data', 'database.sqlite'),
+      database: process.env.DB_PATH || path.join(process.cwd(), 'data', 'database.sqlite'),
       entities: [CronJob, ExecutionLog],
-      synchronize: process.env.NODE_ENV !== 'production',
+      synchronize: true, // Enable for initial setup, disable in real production
       logging: process.env.NODE_ENV === 'development',
     }),
     ScheduleModule.forRoot(),
