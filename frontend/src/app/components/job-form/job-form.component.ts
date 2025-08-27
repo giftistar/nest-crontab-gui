@@ -78,7 +78,7 @@ export class JobFormComponent implements OnInit {
     return this.fb.group({
       name: ['', [Validators.required, Validators.minLength(1)]],
       description: [''],
-      url: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/)]],
+      url: ['', [Validators.required, this.validateUrl.bind(this)]],
       method: [HttpMethod.GET, Validators.required],
       headers: [''],
       body: [''],
@@ -87,6 +87,80 @@ export class JobFormComponent implements OnInit {
       isActive: [true],
       requestTimeout: ['', [Validators.min(1), Validators.max(300)]]
     });
+  }
+
+  private validateUrl(control: any): { [key: string]: any } | null {
+    const url = control.value;
+    
+    if (!url) {
+      return null; // Required validator will handle empty values
+    }
+
+    // Check for protocol
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return { pattern: { message: 'URL must start with http:// or https://' } };
+    }
+
+    try {
+      // Remove protocol for hostname validation
+      const urlWithoutProtocol = url.replace(/^https?:\/\//, '');
+      
+      // Split by first slash to separate host:port from path
+      const [hostPart] = urlWithoutProtocol.split('/');
+      
+      // Split host and port
+      const lastColonIndex = hostPart.lastIndexOf(':');
+      let hostname: string;
+      let port: string | undefined;
+      
+      if (lastColonIndex !== -1) {
+        hostname = hostPart.substring(0, lastColonIndex);
+        port = hostPart.substring(lastColonIndex + 1);
+        
+        // Validate port if present
+        if (port) {
+          const portNum = parseInt(port, 10);
+          if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+            return { pattern: { message: 'Port must be between 1 and 65535' } };
+          }
+        }
+      } else {
+        hostname = hostPart;
+      }
+      
+      // Validate hostname
+      if (!hostname) {
+        return { pattern: { message: 'Invalid hostname' } };
+      }
+      
+      // Check for IPv6
+      if (hostname.startsWith('[') && hostname.endsWith(']')) {
+        return null; // Basic IPv6 format is acceptable
+      }
+      
+      // Check for IPv4
+      const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+      if (ipv4Pattern.test(hostname)) {
+        const parts = hostname.split('.');
+        const isValidIp = parts.every(part => {
+          const num = parseInt(part, 10);
+          return num >= 0 && num <= 255;
+        });
+        return isValidIp ? null : { pattern: { message: 'Invalid IP address' } };
+      }
+      
+      // Check for valid hostname (including Docker service names)
+      // Allow alphanumeric, hyphens, underscores, and dots
+      const hostnamePattern = /^[a-zA-Z0-9]([a-zA-Z0-9\-_]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-_]*[a-zA-Z0-9])?)*$/;
+      
+      if (!hostnamePattern.test(hostname) && hostname !== 'localhost') {
+        return { pattern: { message: 'Invalid hostname format' } };
+      }
+      
+      return null;
+    } catch {
+      return { pattern: { message: 'Invalid URL format' } };
+    }
   }
 
   private validateSchedule(control: any): { [key: string]: any } | null {
@@ -240,7 +314,7 @@ export class JobFormComponent implements OnInit {
     const errors = field.errors;
     if (errors['required']) return `${fieldName} is required`;
     if (errors['minlength']) return `${fieldName} is too short`;
-    if (errors['pattern'] && fieldName === 'url') return 'Please enter a valid URL (http:// or https://)';
+    if (errors['pattern']) return errors['pattern'].message || 'Invalid format';
     if (errors['invalidSchedule']) return errors['invalidSchedule'].message;
     if (errors['min'] && fieldName === 'requestTimeout') return 'Timeout must be at least 1 second';
     if (errors['max'] && fieldName === 'requestTimeout') return 'Timeout cannot exceed 300 seconds';

@@ -4,7 +4,6 @@ import {
   IsEnum,
   IsBoolean,
   IsOptional,
-  IsUrl,
   IsJSON,
   IsNumber,
   Min,
@@ -17,6 +16,95 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { HttpMethod, ScheduleType } from '../entities/cronjob.entity';
 import { Transform } from 'class-transformer';
+
+// Custom validator for Docker-compatible URLs
+export function IsDockerCompatibleUrl(validationOptions?: ValidationOptions) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      name: 'isDockerCompatibleUrl',
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any) {
+          if (!value || typeof value !== 'string') {
+            return false;
+          }
+
+          // Check for protocol
+          if (!value.startsWith('http://') && !value.startsWith('https://')) {
+            return false;
+          }
+
+          try {
+            // Remove protocol for hostname validation
+            const urlWithoutProtocol = value.replace(/^https?:\/\//, '');
+            
+            // Split by first slash to separate host:port from path
+            const [hostPart] = urlWithoutProtocol.split('/');
+            
+            // Split host and port
+            const lastColonIndex = hostPart.lastIndexOf(':');
+            let hostname: string;
+            let port: string | undefined;
+            
+            if (lastColonIndex !== -1) {
+              hostname = hostPart.substring(0, lastColonIndex);
+              port = hostPart.substring(lastColonIndex + 1);
+              
+              // Validate port if present
+              if (port) {
+                const portNum = parseInt(port, 10);
+                if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+                  return false;
+                }
+              }
+            } else {
+              hostname = hostPart;
+            }
+            
+            // Validate hostname
+            if (!hostname) {
+              return false;
+            }
+            
+            // Allow various hostname formats:
+            // - Docker service names (mk-admin, mk_smartstore, service-name)
+            // - Regular domains (example.com, sub.example.com)
+            // - IP addresses (192.168.1.1, [::1])
+            // - Localhost
+            
+            // Check for IPv6
+            if (hostname.startsWith('[') && hostname.endsWith(']')) {
+              return true; // Basic IPv6 format check
+            }
+            
+            // Check for IPv4
+            const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+            if (ipv4Pattern.test(hostname)) {
+              const parts = hostname.split('.');
+              return parts.every(part => {
+                const num = parseInt(part, 10);
+                return num >= 0 && num <= 255;
+              });
+            }
+            
+            // Check for valid hostname (including Docker service names)
+            // Allow alphanumeric, hyphens, underscores, and dots
+            const hostnamePattern = /^[a-zA-Z0-9]([a-zA-Z0-9\-_]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-_]*[a-zA-Z0-9])?)*$/;
+            
+            return hostnamePattern.test(hostname) || hostname === 'localhost';
+          } catch {
+            return false;
+          }
+        },
+        defaultMessage() {
+          return 'URL must be valid (e.g., http://example.com, http://service-name:8080, http://mk-admin)';
+        },
+      },
+    });
+  };
+}
 
 // Custom validator for schedule format
 export function IsValidSchedule(validationOptions?: ValidationOptions) {
@@ -91,7 +179,7 @@ export class CreateCronJobDto {
     description: 'URL to call',
     example: 'https://api.example.com/health',
   })
-  @IsUrl({}, { message: 'URL must be a valid URL' })
+  @IsDockerCompatibleUrl()
   @IsNotEmpty()
   url: string;
 
