@@ -512,3 +512,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 
   docker run -d -p 4000:4000 -v ./data:/app/data giftistar/nest-crontab-gui:0.0.1
+  docker run -d -p 4000:4000 -v ./data:/app/data giftistar/nest-crontab-gui:latest
+  
