@@ -1,0 +1,150 @@
+<div class="job-form-container">
+  <mat-toolbar color="primary">
+    <button mat-icon-button (click)="onCancel()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span>{{ getTitle() }}</span>
+  </mat-toolbar>
+
+  <div class="content" *ngIf="!loading">
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>{{ getTitle() }}</mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <form [formGroup]="jobForm" (ngSubmit)="onSubmit()" class="job-form">
+          
+          <!-- Basic Information Section -->
+          <div class="form-section">
+            <h3>Basic Information</h3>
+            
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Job Name *</mat-label>
+              <input matInput formControlName="name" placeholder="My scheduled job">
+              <mat-error *ngIf="isFieldInvalid('name')">
+                {{ getFieldError('name') }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" rows="2" placeholder="Optional description"></textarea>
+            </mat-form-field>
+          </div>
+
+          <!-- HTTP Request Section -->
+          <div class="form-section">
+            <h3>HTTP Request</h3>
+            
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>URL *</mat-label>
+              <input matInput formControlName="url" placeholder="https://api.example.com/endpoint">
+              <mat-error *ngIf="isFieldInvalid('url')">
+                {{ getFieldError('url') }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>HTTP Method *</mat-label>
+              <mat-select formControlName="method">
+                <mat-option *ngFor="let method of httpMethods" [value]="method">
+                  {{ method }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Headers</mat-label>
+              <textarea matInput formControlName="headers" rows="3" 
+                        placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'>
+              </textarea>
+              <mat-hint>JSON format for HTTP headers (optional)</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width" *ngIf="shouldShowBodyField()">
+              <mat-label>Request Body</mat-label>
+              <textarea matInput formControlName="body" rows="4" 
+                        placeholder='{"key": "value"}'>
+              </textarea>
+              <mat-hint>Request body for POST/PUT requests</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Request Timeout (seconds)</mat-label>
+              <input matInput type="number" formControlName="requestTimeout" 
+                     placeholder="30" min="1" max="300">
+              <mat-hint>Timeout for this specific job (1-300 seconds). Leave empty to use system default.</mat-hint>
+              <mat-error *ngIf="isFieldInvalid('requestTimeout')">
+                {{ getFieldError('requestTimeout') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Schedule Section -->
+          <div class="form-section">
+            <h3>Schedule Configuration</h3>
+            
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Schedule Type *</mat-label>
+              <mat-select formControlName="scheduleType" (selectionChange)="onScheduleTypeChange()">
+                <mat-option *ngFor="let type of scheduleTypes" [value]="type">
+                  {{ type | uppercase }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Schedule *</mat-label>
+              <input matInput formControlName="schedule">
+              <mat-hint>{{ getScheduleHint() }}</mat-hint>
+              <mat-error *ngIf="isFieldInvalid('schedule')">
+                {{ getFieldError('schedule') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Settings Section -->
+          <div class="form-section">
+            <h3>Settings</h3>
+            
+            <div class="toggle-section">
+              <mat-slide-toggle formControlName="isActive" color="primary">
+                Active
+              </mat-slide-toggle>
+              <span class="toggle-description">Enable this job to run on schedule</span>
+            </div>
+          </div>
+
+        </form>
+      </mat-card-content>
+
+      <mat-card-actions class="card-actions">
+        <button mat-button type="button" (click)="onCancel()">
+          Cancel
+        </button>
+        <button mat-button type="button" (click)="onReset()">
+          Reset
+        </button>
+        <button mat-raised-button color="primary" 
+                (click)="onSubmit()" 
+                [disabled]="saving || !jobForm.valid">
+          <mat-spinner *ngIf="saving" diameter="20"></mat-spinner>
+          <span *ngIf="!saving">{{ getSubmitButtonText() }}</span>
+          <span *ngIf="saving">Saving...</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <div class="content loading-content" *ngIf="loading">
+    <mat-card>
+      <mat-card-content>
+        <div class="loading-wrapper">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>Loading job data...</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

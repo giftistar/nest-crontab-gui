@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  crontab-gui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nest-crontab-gui
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT:-3000}
+      - DB_PATH=/app/data/database.sqlite
+      - LOG_RETENTION_DAYS=${LOG_RETENTION_DAYS:-3}
+      - LOG_CLEANUP_ENABLED=${LOG_CLEANUP_ENABLED:-true}
+      - TZ=${TZ:-UTC}
+    volumes:
+      # Persist database
+      - crontab-data:/app/data
+      # Optional: Mount logs directory
+      - crontab-logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - crontab-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+volumes:
+  crontab-data:
+    driver: local
+  crontab-logs:
+    driver: local
+
+networks:
+  crontab-network:
+    driver: bridge

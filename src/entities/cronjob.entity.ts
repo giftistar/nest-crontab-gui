@@ -1,0 +1,85 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+  OneToMany,
+} from 'typeorm';
+import { ExecutionLog } from './execution-log.entity';
+
+export enum HttpMethod {
+  GET = 'GET',
+  POST = 'POST',
+}
+
+export enum ScheduleType {
+  CRON = 'cron',
+  REPEAT = 'repeat',
+}
+
+@Entity('cronjobs')
+@Index(['isActive'])
+@Index(['scheduleType'])
+export class CronJob {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ length: 255 })
+  @Index()
+  name: string;
+
+  @Column({ type: 'text' })
+  url: string;
+
+  @Column({
+    type: 'text',
+    enum: HttpMethod,
+    default: HttpMethod.GET,
+  })
+  method: HttpMethod;
+
+  @Column({ type: 'text', nullable: true })
+  headers: string;
+
+  @Column({ type: 'text', nullable: true })
+  body: string;
+
+  @Column({ length: 255 })
+  schedule: string;
+
+  @Column({
+    type: 'text',
+    enum: ScheduleType,
+    default: ScheduleType.CRON,
+  })
+  scheduleType: ScheduleType;
+
+  @Column({ default: true })
+  isActive: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @Column({ type: 'text', nullable: true })
+  description?: string;
+
+  @Column({ type: 'datetime', nullable: true })
+  lastExecutedAt?: Date;
+
+  @Column({ default: 0 })
+  executionCount: number;
+
+  @Column({ type: 'int', nullable: true })
+  requestTimeout?: number; // Timeout in milliseconds
+
+  @OneToMany(() => ExecutionLog, (log) => log.job, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  executionLogs: ExecutionLog[];
+}

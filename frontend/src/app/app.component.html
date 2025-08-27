@@ -1,0 +1,41 @@
+<div class="app-container">
+  <!-- Header -->
+  <mat-toolbar color="primary" class="app-header">
+    <button mat-icon-button (click)="goHome()" class="logo-button">
+      <mat-icon>schedule</mat-icon>
+    </button>
+    <span class="app-title">{{ title }}</span>
+    
+    <span class="spacer"></span>
+    
+    <!-- Navigation Items -->
+    <nav class="nav-items">
+      <button 
+        mat-button 
+        *ngFor="let item of navigationItems" 
+        [class.active]="isActiveRoute(item.path)"
+        (click)="navigateTo(item.path)"
+        class="nav-button">
+        <mat-icon>{{ item.icon }}</mat-icon>
+        <span>{{ item.label }}</span>
+      </button>
+    </nav>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button 
+        mat-raised-button 
+        color="accent" 
+        (click)="createNewJob()"
+        class="create-button">
+        <mat-icon>add</mat-icon>
+        <span class="button-text">New Job</span>
+      </button>
+    </div>
+  </mat-toolbar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <router-outlet />
+  </main>
+</div>

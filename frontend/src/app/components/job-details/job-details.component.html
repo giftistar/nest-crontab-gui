@@ -1,0 +1,251 @@
+<div class="job-details-container">
+  <mat-toolbar color="primary">
+    <button mat-icon-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span>Job Details</span>
+    <span class="toolbar-spacer"></span>
+    <button mat-icon-button (click)="toggleAutoRefresh()" 
+            [color]="autoRefresh ? 'accent' : ''"
+            matTooltip="Auto-refresh">
+      <mat-icon>{{ autoRefresh ? 'pause' : 'play_arrow' }}</mat-icon>
+    </button>
+  </mat-toolbar>
+
+  <div class="content" *ngIf="!loading && job">
+    <mat-tab-group class="full-height-tabs" 
+                   [(selectedIndex)]="selectedTabIndex"
+                   (selectedTabChange)="onTabChange($event.index)">
+      
+      <!-- Job Overview Tab -->
+      <mat-tab label="Overview">
+        <div class="tab-content">
+          <mat-card class="overview-card">
+            <mat-card-header>
+              <div mat-card-avatar class="job-avatar">
+                <mat-icon>schedule</mat-icon>
+              </div>
+              <mat-card-title>{{ job.name }}</mat-card-title>
+              <mat-card-subtitle>{{ job.description || 'No description' }}</mat-card-subtitle>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <div class="job-info-grid">
+                <div class="info-item">
+                  <span class="label">URL:</span>
+                  <span class="value url-text">{{ job.url }}</span>
+                </div>
+                
+                <div class="info-item">
+                  <span class="label">Method:</span>
+                  <mat-chip [color]="getMethodColor(job.method)" selected>
+                    {{ job.method }}
+                  </mat-chip>
+                </div>
+                
+                <div class="info-item">
+                  <span class="label">Schedule:</span>
+                  <code class="schedule-text">{{ job.schedule }}</code>
+                </div>
+                
+                <div class="info-item">
+                  <span class="label">Type:</span>
+                  <mat-chip [color]="getScheduleTypeColor(job.scheduleType)" selected>
+                    {{ job.scheduleType | uppercase }}
+                  </mat-chip>
+                </div>
+                
+                <div class="info-item">
+                  <span class="label">Status:</span>
+                  <mat-slide-toggle [checked]="job.isActive" 
+                                    (change)="toggleJobStatus()"
+                                    color="primary">
+                    {{ job.isActive ? 'Active' : 'Inactive' }}
+                  </mat-slide-toggle>
+                </div>
+                
+                <div class="info-item">
+                  <span class="label">Created:</span>
+                  <span class="value">{{ formatDate(job.createdAt) }}</span>
+                </div>
+                
+                <div class="info-item">
+                  <span class="label">Last Updated:</span>
+                  <span class="value">{{ formatDate(job.updatedAt) }}</span>
+                </div>
+                
+                <div class="info-item">
+                  <span class="label">Last Executed:</span>
+                  <span class="value">{{ job.lastExecutedAt ? formatDate(job.lastExecutedAt) : 'Never' }}</span>
+                </div>
+                
+                <div class="info-item">
+                  <span class="label">Total Executions:</span>
+                  <span class="value execution-count">{{ job.executionCount }}</span>
+                </div>
+                
+                <div class="info-item" *ngIf="job.requestTimeout">
+                  <span class="label">Request Timeout:</span>
+                  <span class="value">{{ job.requestTimeout / 1000 }} seconds</span>
+                </div>
+              </div>
+            </mat-card-content>
+
+            <mat-card-actions>
+              <button mat-raised-button color="primary" (click)="editJob()">
+                <mat-icon>edit</mat-icon>
+                Edit Job
+              </button>
+              <button mat-raised-button color="accent" (click)="triggerJob()">
+                <mat-icon>play_arrow</mat-icon>
+                Trigger Now
+              </button>
+              <button mat-raised-button color="warn" (click)="deleteJob()">
+                <mat-icon>delete</mat-icon>
+                Delete Job
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <!-- Request Configuration Tab -->
+      <mat-tab label="Request Config">
+        <div class="tab-content">
+          <mat-card class="config-card">
+            <mat-card-header>
+              <mat-card-title>HTTP Request Configuration</mat-card-title>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <div class="config-section">
+                <h3>Headers</h3>
+                <pre class="config-display">{{ formatHeaders(job.headers) }}</pre>
+              </div>
+              
+              <div class="config-section" *ngIf="job.body">
+                <h3>Request Body</h3>
+                <pre class="config-display">{{ formatBody(job.body) }}</pre>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <!-- Execution History Tab -->
+      <mat-tab label="Execution History">
+        <div class="tab-content">
+          <mat-card class="history-card">
+            <mat-card-header>
+              <mat-card-title>Execution History</mat-card-title>
+              <mat-card-subtitle>Recent job executions and their results</mat-card-subtitle>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <div class="table-container">
+                <div *ngIf="logsLoading" class="loading-overlay">
+                  <mat-spinner diameter="40"></mat-spinner>
+                </div>
+                
+                <table mat-table [dataSource]="logs" class="history-table">
+                  
+                  <!-- Executed At Column -->
+                  <ng-container matColumnDef="executedAt">
+                    <th mat-header-cell *matHeaderCellDef>Executed At</th>
+                    <td mat-cell *matCellDef="let log">
+                      {{ formatDate(log.executedAt) }}
+                    </td>
+                  </ng-container>
+
+                  <!-- Status Column -->
+                  <ng-container matColumnDef="status">
+                    <th mat-header-cell *matHeaderCellDef>Status</th>
+                    <td mat-cell *matCellDef="let log">
+                      <mat-chip [color]="getStatusColor(log.status)" selected>
+                        {{ log.status }}
+                      </mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <!-- Duration Column -->
+                  <ng-container matColumnDef="duration">
+                    <th mat-header-cell *matHeaderCellDef>Duration</th>
+                    <td mat-cell *matCellDef="let log">
+                      {{ formatDuration(log.executionTime) }}
+                    </td>
+                  </ng-container>
+
+                  <!-- HTTP Status Column -->
+                  <ng-container matColumnDef="httpStatus">
+                    <th mat-header-cell *matHeaderCellDef>HTTP Status</th>
+                    <td mat-cell *matCellDef="let log">
+                      <span [class]="'http-status ' + (log.responseCode && log.responseCode >= 200 && log.responseCode < 300 ? 'success' : 'error')">
+                        {{ log.responseCode || 'N/A' }}
+                      </span>
+                    </td>
+                  </ng-container>
+
+                  <!-- Response Preview Column -->
+                  <ng-container matColumnDef="response">
+                    <th mat-header-cell *matHeaderCellDef>Response</th>
+                    <td mat-cell *matCellDef="let log" class="response-preview">
+                      <span [class.error-text]="log.status === 'failed'">
+                        {{ formatResponsePreview(log) }}
+                      </span>
+                    </td>
+                  </ng-container>
+
+                  <!-- Triggered Manually Column -->
+                  <ng-container matColumnDef="triggeredManually">
+                    <th mat-header-cell *matHeaderCellDef>Trigger</th>
+                    <td mat-cell *matCellDef="let log">
+                      <mat-icon [color]="log.triggeredManually ? 'accent' : 'primary'">
+                        {{ log.triggeredManually ? 'touch_app' : 'schedule' }}
+                      </mat-icon>
+                    </td>
+                  </ng-container>
+
+                  <!-- Actions Column -->
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>Actions</th>
+                    <td mat-cell *matCellDef="let log">
+                      <button mat-icon-button color="primary" 
+                              (click)="viewLogDetails(log)"
+                              matTooltip="View Details">
+                        <mat-icon>visibility</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+                      class="clickable-row"
+                      (click)="viewLogDetails(row)"></tr>
+                </table>
+
+                <mat-paginator 
+                  [length]="totalLogs"
+                  [pageSize]="pageSize"
+                  [pageSizeOptions]="[5, 10, 20, 50]"
+                  [showFirstLastButtons]="true"
+                  (page)="onPageChange($event)">
+                </mat-paginator>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+
+  <div class="content loading-content" *ngIf="loading">
+    <mat-card>
+      <mat-card-content>
+        <div class="loading-wrapper">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>Loading job details...</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

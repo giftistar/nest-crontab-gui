@@ -1,0 +1,157 @@
+<div class="job-list-container">
+  <mat-toolbar color="primary">
+    <span>Cron Jobs</span>
+    <span class="toolbar-spacer"></span>
+    <button mat-raised-button color="accent" (click)="createJob()">
+      <mat-icon>add</mat-icon>
+      New Job
+    </button>
+  </mat-toolbar>
+
+  <div class="content">
+    <mat-card *ngIf="loading" class="loading-card">
+      <mat-card-content>
+        <div class="loading-content">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>Loading jobs...</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card *ngIf="!loading && jobs.length === 0" class="empty-state">
+      <mat-card-content>
+        <div class="empty-content">
+          <mat-icon class="empty-icon">schedule</mat-icon>
+          <h2>No jobs found</h2>
+          <p>Create your first cron job to get started</p>
+          <button mat-raised-button color="primary" (click)="createJob()">
+            <mat-icon>add</mat-icon>
+            Create Job
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card *ngIf="!loading && jobs.length > 0" class="table-card">
+      <mat-card-content>
+        <div class="table-container">
+          <table mat-table [dataSource]="jobs" class="jobs-table">
+            
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Name</th>
+              <td mat-cell *matCellDef="let job">
+                <div class="job-name">
+                  <strong>{{ job.name }}</strong>
+                  <div class="job-description" *ngIf="job.description">
+                    {{ job.description }}
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- URL Column -->
+            <ng-container matColumnDef="url">
+              <th mat-header-cell *matHeaderCellDef>URL</th>
+              <td mat-cell *matCellDef="let job">
+                <span class="url-text">{{ job.url }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Method Column -->
+            <ng-container matColumnDef="method">
+              <th mat-header-cell *matHeaderCellDef>Method</th>
+              <td mat-cell *matCellDef="let job">
+                <mat-chip [color]="getMethodColor(job.method)" selected>
+                  {{ job.method }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <!-- Schedule Column -->
+            <ng-container matColumnDef="schedule">
+              <th mat-header-cell *matHeaderCellDef>Schedule</th>
+              <td mat-cell *matCellDef="let job">
+                <code class="schedule-text">{{ job.schedule }}</code>
+              </td>
+            </ng-container>
+
+            <!-- Schedule Type Column -->
+            <ng-container matColumnDef="scheduleType">
+              <th mat-header-cell *matHeaderCellDef>Type</th>
+              <td mat-cell *matCellDef="let job">
+                <mat-chip [color]="getScheduleTypeColor(job.scheduleType)" selected>
+                  {{ job.scheduleType | uppercase }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <!-- Active Status Column -->
+            <ng-container matColumnDef="isActive">
+              <th mat-header-cell *matHeaderCellDef>Active</th>
+              <td mat-cell *matCellDef="let job">
+                <mat-slide-toggle 
+                  [checked]="job.isActive" 
+                  (change)="toggleJobStatus(job)"
+                  [color]="'primary'">
+                </mat-slide-toggle>
+              </td>
+            </ng-container>
+
+            <!-- Last Executed Column -->
+            <ng-container matColumnDef="lastExecutedAt">
+              <th mat-header-cell *matHeaderCellDef>Last Executed</th>
+              <td mat-cell *matCellDef="let job">
+                <span class="timestamp">{{ formatLastExecuted(job.lastExecutedAt) }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Execution Count Column -->
+            <ng-container matColumnDef="executionCount">
+              <th mat-header-cell *matHeaderCellDef>Runs</th>
+              <td mat-cell *matCellDef="let job">
+                <span class="execution-count">{{ job.executionCount }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let job">
+                <div class="action-buttons">
+                  <button mat-icon-button 
+                          color="primary" 
+                          (click)="viewJob(job)"
+                          matTooltip="View Details">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <button mat-icon-button 
+                          color="primary" 
+                          (click)="editJob(job)"
+                          matTooltip="Edit Job">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button 
+                          color="accent" 
+                          (click)="triggerJob(job)"
+                          matTooltip="Trigger Now">
+                    <mat-icon>play_arrow</mat-icon>
+                  </button>
+                  <button mat-icon-button 
+                          color="warn" 
+                          (click)="deleteJob(job)"
+                          matTooltip="Delete Job">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

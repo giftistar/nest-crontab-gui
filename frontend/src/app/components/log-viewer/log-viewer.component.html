@@ -1,0 +1,257 @@
+<!-- Dialog Mode - Single Log Details -->
+<div *ngIf="isDialogMode && singleLog" class="dialog-content">
+  <div class="dialog-header">
+    <h2>Execution Log Details</h2>
+    <button mat-icon-button (click)="closeDialog()" class="close-button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-tab-group>
+    <!-- Overview Tab -->
+    <mat-tab label="Overview">
+      <div class="tab-content">
+        <div class="log-overview">
+          <div class="overview-grid">
+            <div class="overview-item">
+              <span class="label">Status:</span>
+              <mat-chip [color]="getStatusColor(singleLog.status)" selected>
+                {{ singleLog.status }}
+              </mat-chip>
+            </div>
+            
+            <div class="overview-item">
+              <span class="label">Executed At:</span>
+              <span class="value">{{ formatDate(singleLog.executedAt) }}</span>
+            </div>
+            
+            <div class="overview-item">
+              <span class="label">Duration:</span>
+              <span class="value">{{ formatDuration(singleLog.durationMs) }}</span>
+            </div>
+            
+            <div class="overview-item">
+              <span class="label">HTTP Status:</span>
+              <span class="value http-status" [class]="getHttpStatusClass(singleLog.httpStatus)">
+                {{ singleLog.httpStatus || 'N/A' }}
+              </span>
+            </div>
+            
+            <div class="overview-item">
+              <span class="label">Trigger Type:</span>
+              <mat-icon [color]="singleLog.triggeredManually ? 'accent' : 'primary'">
+                {{ singleLog.triggeredManually ? 'touch_app' : 'schedule' }}
+              </mat-icon>
+              <span class="value">{{ singleLog.triggeredManually ? 'Manual' : 'Scheduled' }}</span>
+            </div>
+            
+            <div class="overview-item" *ngIf="singleLog.errorMessage">
+              <span class="label">Error:</span>
+              <span class="value error-text">{{ singleLog.errorMessage }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- Response Tab -->
+    <mat-tab label="Response">
+      <div class="tab-content">
+        <div class="response-section">
+          <div class="section-header">
+            <h3>Response Body</h3>
+            <button mat-icon-button 
+                    (click)="copyToClipboard(singleLog.responseBody || '')"
+                    matTooltip="Copy to clipboard">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </div>
+          <pre class="response-display">{{ formatJson(singleLog.responseBody) }}</pre>
+        </div>
+
+        <div class="response-section" *ngIf="singleLog.responseHeaders">
+          <div class="section-header">
+            <h3>Response Headers</h3>
+            <button mat-icon-button 
+                    (click)="copyToClipboard(singleLog.responseHeaders || '')"
+                    matTooltip="Copy to clipboard">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </div>
+          <pre class="response-display">{{ formatJson(singleLog.responseHeaders) }}</pre>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>
+
+<!-- Page Mode - All Logs Viewer -->
+<div *ngIf="!isDialogMode" class="log-viewer-container">
+  <mat-toolbar color="primary">
+    <button mat-icon-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span>Execution Logs</span>
+  </mat-toolbar>
+
+  <div class="content">
+    <!-- Search and Filter Section -->
+    <mat-card class="filter-card">
+      <mat-card-header>
+        <mat-card-title>Search & Filter</mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <form [formGroup]="searchForm" class="search-form">
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Job Name</mat-label>
+              <mat-select formControlName="jobName">
+                <mat-option value="">All Jobs</mat-option>
+                <mat-option *ngFor="let job of jobs" [value]="job.id">
+                  {{ job.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Status</mat-label>
+              <mat-select formControlName="status">
+                <mat-option value="">All Statuses</mat-option>
+                <mat-option *ngFor="let status of executionStatuses" [value]="status">
+                  {{ status }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Trigger Type</mat-label>
+              <mat-select formControlName="triggeredManually">
+                <mat-option value="">All Types</mat-option>
+                <mat-option value="false">Scheduled</mat-option>
+                <mat-option value="true">Manual</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Search Response Content</mat-label>
+              <input matInput formControlName="responseContent" placeholder="Search in response bodies...">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="form-actions">
+            <button mat-raised-button color="primary" (click)="loadLogs()">
+              <mat-icon>search</mat-icon>
+              Search
+            </button>
+            <button mat-button (click)="clearFilters()">
+              <mat-icon>clear</mat-icon>
+              Clear Filters
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Results Section -->
+    <mat-card class="results-card">
+      <mat-card-header>
+        <mat-card-title>Execution History</mat-card-title>
+        <mat-card-subtitle>{{ totalLogs }} total logs found</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="table-container">
+          <div *ngIf="logsLoading" class="loading-overlay">
+            <mat-spinner diameter="40"></mat-spinner>
+          </div>
+          
+          <table mat-table [dataSource]="logs" class="logs-table">
+            
+            <!-- Executed At Column -->
+            <ng-container matColumnDef="executedAt">
+              <th mat-header-cell *matHeaderCellDef>Executed At</th>
+              <td mat-cell *matCellDef="let log">
+                {{ formatDate(log.executedAt) }}
+              </td>
+            </ng-container>
+
+            <!-- Job Name Column -->
+            <ng-container matColumnDef="jobName">
+              <th mat-header-cell *matHeaderCellDef>Job</th>
+              <td mat-cell *matCellDef="let log">
+                <span class="job-name">{{ getJobNameById(log.jobId) }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let log">
+                <mat-chip [color]="getStatusColor(log.status)" selected>
+                  {{ log.status }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <!-- Duration Column -->
+            <ng-container matColumnDef="duration">
+              <th mat-header-cell *matHeaderCellDef>Duration</th>
+              <td mat-cell *matCellDef="let log">
+                {{ formatDuration(log.durationMs) }}
+              </td>
+            </ng-container>
+
+            <!-- HTTP Status Column -->
+            <ng-container matColumnDef="httpStatus">
+              <th mat-header-cell *matHeaderCellDef>HTTP Status</th>
+              <td mat-cell *matCellDef="let log">
+                <span class="http-status" [class]="getHttpStatusClass(log.httpStatus)">
+                  {{ log.httpStatus || 'N/A' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Triggered Manually Column -->
+            <ng-container matColumnDef="triggeredManually">
+              <th mat-header-cell *matHeaderCellDef>Trigger</th>
+              <td mat-cell *matCellDef="let log">
+                <mat-icon [color]="log.triggeredManually ? 'accent' : 'primary'">
+                  {{ log.triggeredManually ? 'touch_app' : 'schedule' }}
+                </mat-icon>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let log">
+                <button mat-icon-button color="primary" 
+                        (click)="viewLogDetails(log)"
+                        matTooltip="View Job Details">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+                class="clickable-row"
+                (click)="viewLogDetails(row)"></tr>
+          </table>
+
+          <mat-paginator 
+            [length]="totalLogs"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[10, 20, 50, 100]"
+            [showFirstLastButtons]="true"
+            (page)="onPageChange($event)">
+          </mat-paginator>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
