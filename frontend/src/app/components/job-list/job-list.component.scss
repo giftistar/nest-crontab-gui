@@ -2,6 +2,7 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .toolbar-spacer {
@@ -12,10 +13,28 @@
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.loading-card, .empty-state, .table-card {
+.loading-card, .empty-state {
   height: fit-content;
+}
+
+.table-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  
+  mat-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 16px;
+  }
 }
 
 .loading-content {
@@ -55,11 +74,14 @@
 }
 
 .table-container {
-  overflow-x: auto;
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
 }
 
 .jobs-table {
   width: 100%;
+  min-width: 800px;  // Ensure table has minimum width for all columns
   
   .mat-mdc-header-cell {
     font-weight: 600;

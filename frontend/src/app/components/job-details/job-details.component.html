@@ -150,16 +150,85 @@
             </mat-card-header>
             
             <mat-card-content>
+              <!-- Filter Section -->
+              <div class="filters-section">
+                <div class="filter-row">
+                  <mat-form-field appearance="outline" class="filter-field date-field">
+                    <mat-label>Start Date</mat-label>
+                    <input matInput [matDatepicker]="startPicker" 
+                           [(ngModel)]="dateRangeStart" 
+                           (dateChange)="applyFilters()"
+                           placeholder="Choose start date">
+                    <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #startPicker></mat-datepicker>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="filter-field time-field">
+                    <mat-label>Start Time</mat-label>
+                    <input matInput type="time" 
+                           [(ngModel)]="timeRangeStart" 
+                           (change)="applyFilters()"
+                           placeholder="HH:MM">
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="filter-field date-field">
+                    <mat-label>End Date</mat-label>
+                    <input matInput [matDatepicker]="endPicker" 
+                           [(ngModel)]="dateRangeEnd" 
+                           (dateChange)="applyFilters()"
+                           placeholder="Choose end date">
+                    <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #endPicker></mat-datepicker>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="filter-field time-field">
+                    <mat-label>End Time</mat-label>
+                    <input matInput type="time" 
+                           [(ngModel)]="timeRangeEnd" 
+                           (change)="applyFilters()"
+                           placeholder="HH:MM">
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="filter-field status-field">
+                    <mat-label>Status</mat-label>
+                    <mat-select [(ngModel)]="selectedStatus" (selectionChange)="applyFilters()">
+                      <mat-option *ngFor="let option of statusOptions" [value]="option.value">
+                        {{ option.label }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <div class="filter-actions">
+                  <button mat-raised-button color="primary" (click)="applyFilters()" class="filter-button">
+                    <mat-icon>filter_list</mat-icon>
+                    Apply Filters
+                  </button>
+
+                  <button mat-button (click)="clearFilters()" class="filter-button">
+                    <mat-icon>clear</mat-icon>
+                    Clear Filters
+                  </button>
+                  
+                  <span class="filter-info" *ngIf="filteredLogs.length < logs.length">
+                    Showing {{ filteredLogs.length }} of {{ logs.length }} logs
+                  </span>
+                </div>
+              </div>
               <div class="table-container">
                 <div *ngIf="logsLoading" class="loading-overlay">
                   <mat-spinner diameter="40"></mat-spinner>
                 </div>
                 
-                <table mat-table [dataSource]="logs" class="history-table">
+                <table mat-table [dataSource]="filteredLogs" matSort 
+                       (matSortChange)="onSortChange($event)"
+                       [matSortActive]="sortActive"
+                       [matSortDirection]="sortDirection"
+                       class="history-table">
                   
                   <!-- Executed At Column -->
                   <ng-container matColumnDef="executedAt">
-                    <th mat-header-cell *matHeaderCellDef>Executed At</th>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header>Executed At</th>
                     <td mat-cell *matCellDef="let log">
                       {{ formatDate(log.executedAt) }}
                     </td>
@@ -167,7 +236,7 @@
 
                   <!-- Status Column -->
                   <ng-container matColumnDef="status">
-                    <th mat-header-cell *matHeaderCellDef>Status</th>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
                     <td mat-cell *matCellDef="let log">
                       <mat-chip [color]="getStatusColor(log.status)" selected>
                         {{ log.status }}
@@ -177,7 +246,7 @@
 
                   <!-- Duration Column -->
                   <ng-container matColumnDef="duration">
-                    <th mat-header-cell *matHeaderCellDef>Duration</th>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header>Duration</th>
                     <td mat-cell *matCellDef="let log">
                       {{ formatDuration(log.executionTime) }}
                     </td>
@@ -185,7 +254,7 @@
 
                   <!-- HTTP Status Column -->
                   <ng-container matColumnDef="httpStatus">
-                    <th mat-header-cell *matHeaderCellDef>HTTP Status</th>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header>HTTP Status</th>
                     <td mat-cell *matCellDef="let log">
                       <span [class]="'http-status ' + (log.responseCode && log.responseCode >= 200 && log.responseCode < 300 ? 'success' : 'error')">
                         {{ log.responseCode || 'N/A' }}
@@ -205,7 +274,7 @@
 
                   <!-- Triggered Manually Column -->
                   <ng-container matColumnDef="triggeredManually">
-                    <th mat-header-cell *matHeaderCellDef>Trigger</th>
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header>Trigger</th>
                     <td mat-cell *matCellDef="let log">
                       <mat-icon [color]="log.triggeredManually ? 'accent' : 'primary'">
                         {{ log.triggeredManually ? 'touch_app' : 'schedule' }}

@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTableModule } from '@angular/material/table';
+import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
@@ -14,6 +16,11 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { Observable, catchError, of, interval, Subscription } from 'rxjs';
 
 import { JobService } from '../../services/job.service';
@@ -26,6 +33,7 @@ import { LogViewerComponent } from '../log-viewer/log-viewer.component';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -38,7 +46,13 @@ import { LogViewerComponent } from '../log-viewer/log-viewer.component';
     MatSlideToggleModule,
     MatTabsModule,
     MatDialogModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatSortModule
   ],
   templateUrl: './job-details.component.html',
   styleUrl: './job-details.component.scss'
@@ -46,6 +60,7 @@ import { LogViewerComponent } from '../log-viewer/log-viewer.component';
 export class JobDetailsComponent implements OnInit, OnDestroy {
   job: CronJob | null = null;
   logs: ExecutionLog[] = [];
+  filteredLogs: ExecutionLog[] = [];
   totalLogs = 0;
   loading = true;
   logsLoading = false;
@@ -60,10 +75,27 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   isViewingDetails = false; // Track if user is viewing log details
   
   // Tab management
-  selectedTabIndex = 1; // Start with history tab (index 1)
+  selectedTabIndex = 2; // Start with Execution History tab (index 2)
+  
+  // Filters
+  dateRangeStart: Date | null = null;
+  dateRangeEnd: Date | null = null;
+  timeRangeStart: string = '00:00';
+  timeRangeEnd: string = '23:59';
+  selectedStatus: ExecutionStatus | 'all' = 'all';
+  statusOptions = [
+    { value: 'all', label: 'All Status' },
+    { value: ExecutionStatus.SUCCESS, label: 'Success' },
+    { value: ExecutionStatus.ERROR, label: 'Error' },
+    { value: ExecutionStatus.TIMEOUT, label: 'Timeout' }
+  ];
   
   // Table columns - Added 'response' column
   displayedColumns: string[] = ['executedAt', 'status', 'duration', 'httpStatus', 'response', 'triggeredManually', 'actions'];
+  
+  // Sorting
+  sortActive: string = 'executedAt';
+  sortDirection: 'asc' | 'desc' = 'desc';
 
   private jobId: string | null = null;
 
@@ -117,7 +149,8 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
     if (!this.jobId) return;
 
     this.logsLoading = true;
-    this.jobService.getJobLogs(this.jobId, this.currentPage + 1, this.pageSize)
+    // Load first 100 logs (max allowed by backend)
+    this.jobService.getJobLogs(this.jobId, 1, 100)
       .pipe(
         catchError(error => {
           console.error('Error loading logs:', error);
@@ -141,7 +174,96 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
         this.logsLoading = false;
         this.logs = result.logs;
         this.totalLogs = result.total;
+        this.applyFilters();
       });
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.logs];
+
+    // Apply status filter
+    if (this.selectedStatus !== 'all') {
+      filtered = filtered.filter(log => log.status === this.selectedStatus);
+    }
+
+    // Apply date and time range filter
+    if (this.dateRangeStart) {
+      const startDate = new Date(this.dateRangeStart);
+      const [startHour, startMinute] = this.timeRangeStart.split(':').map(Number);
+      startDate.setHours(startHour, startMinute, 0, 0);
+      const startTime = startDate.getTime();
+      
+      filtered = filtered.filter(log => {
+        const logTime = new Date(log.executedAt).getTime();
+        return logTime >= startTime;
+      });
+    }
+
+    if (this.dateRangeEnd) {
+      const endDate = new Date(this.dateRangeEnd);
+      const [endHour, endMinute] = this.timeRangeEnd.split(':').map(Number);
+      endDate.setHours(endHour, endMinute, 59, 999);
+      const endTime = endDate.getTime();
+      
+      filtered = filtered.filter(log => {
+        const logTime = new Date(log.executedAt).getTime();
+        return logTime <= endTime;
+      });
+    }
+
+    // Apply sorting
+    filtered = this.sortData(filtered);
+
+    this.filteredLogs = filtered;
+    
+    // Apply pagination to filtered results
+    const startIndex = this.currentPage * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this.filteredLogs = filtered.slice(startIndex, endIndex);
+  }
+
+  sortData(data: ExecutionLog[]): ExecutionLog[] {
+    if (!this.sortActive || !this.sortDirection) {
+      return data;
+    }
+
+    return data.sort((a, b) => {
+      const isAsc = this.sortDirection === 'asc';
+      switch (this.sortActive) {
+        case 'executedAt':
+          return this.compare(new Date(a.executedAt).getTime(), new Date(b.executedAt).getTime(), isAsc);
+        case 'status':
+          return this.compare(a.status, b.status, isAsc);
+        case 'duration':
+          return this.compare(a.executionTime || 0, b.executionTime || 0, isAsc);
+        case 'httpStatus':
+          return this.compare(a.responseCode || 0, b.responseCode || 0, isAsc);
+        case 'triggeredManually':
+          return this.compare(a.triggeredManually ? 1 : 0, b.triggeredManually ? 1 : 0, isAsc);
+        default:
+          return 0;
+      }
+    });
+  }
+
+  compare(a: number | string, b: number | string, isAsc: boolean): number {
+    return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
+  }
+
+  onSortChange(sort: Sort): void {
+    this.sortActive = sort.active;
+    this.sortDirection = sort.direction || 'desc';
+    this.applyFilters();
+  }
+
+  clearFilters(): void {
+    this.dateRangeStart = null;
+    this.dateRangeEnd = null;
+    this.timeRangeStart = '00:00';
+    this.timeRangeEnd = '23:59';
+    this.selectedStatus = 'all';
+    this.currentPage = 0;
+    this.applyFilters();
   }
 
   private startAutoRefresh(): void {
@@ -276,7 +398,7 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   onPageChange(event: PageEvent): void {
     this.currentPage = event.pageIndex;
     this.pageSize = event.pageSize;
-    this.loadLogs();
+    this.applyFilters();
   }
 
   viewLogDetails(log: ExecutionLog): void {
@@ -382,7 +504,8 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
               horizontalPosition: 'right',
               verticalPosition: 'top'
             });
-            // Refresh logs after clearing
+            // Reset filters and refresh logs after clearing
+            this.clearFilters();
             this.loadLogs();
           }
         });
