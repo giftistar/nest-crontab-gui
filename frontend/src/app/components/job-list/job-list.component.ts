@@ -49,6 +49,8 @@ export class JobListComponent implements OnInit {
     'method', 
     'schedule', 
     'scheduleType',
+    'executionMode',
+    'runningStatus',
     'isActive', 
     'lastExecutedAt', 
     'executionCount', 

@@ -83,6 +83,26 @@
               </td>
             </ng-container>
 
+            <!-- Execution Mode Column -->
+            <ng-container matColumnDef="executionMode">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Mode</th>
+              <td mat-cell *matCellDef="let job">
+                <mat-chip [color]="job.executionMode === 'parallel' ? 'accent' : 'primary'" selected>
+                  {{ job.executionMode | uppercase }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <!-- Running Status Column -->
+            <ng-container matColumnDef="runningStatus">
+              <th mat-header-cell *matHeaderCellDef>Running</th>
+              <td mat-cell *matCellDef="let job">
+                <span class="running-status" [class.running]="job.currentRunning > 0">
+                  {{ job.currentRunning }}/{{ job.maxConcurrent }}
+                </span>
+              </td>
+            </ng-container>
+
             <!-- Active Status Column -->
             <ng-container matColumnDef="isActive">
               <th mat-header-cell *matHeaderCellDef mat-sort-header>Active</th>

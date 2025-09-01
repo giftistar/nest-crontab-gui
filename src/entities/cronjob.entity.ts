@@ -19,6 +19,11 @@ export enum ScheduleType {
   REPEAT = 'repeat',
 }
 
+export enum ExecutionMode {
+  SEQUENTIAL = 'sequential',
+  PARALLEL = 'parallel',
+}
+
 @Entity('cronjobs')
 @Index(['isActive'])
 @Index(['scheduleType'])
@@ -76,6 +81,19 @@ export class CronJob {
 
   @Column({ type: 'int', nullable: true })
   requestTimeout?: number; // Timeout in milliseconds
+
+  @Column({
+    type: 'text',
+    enum: ExecutionMode,
+    default: ExecutionMode.SEQUENTIAL,
+  })
+  executionMode: ExecutionMode;
+
+  @Column({ type: 'int', default: 1 })
+  maxConcurrent: number;
+
+  @Column({ type: 'int', default: 0 })
+  currentRunning: number;
 
   @OneToMany(() => ExecutionLog, (log) => log.job, {
     cascade: true,

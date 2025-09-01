@@ -10,6 +10,11 @@ export enum HttpMethod {
   DELETE = 'DELETE',
 }
 
+export enum ExecutionMode {
+  SEQUENTIAL = 'sequential',
+  PARALLEL = 'parallel',
+}
+
 export interface CronJob {
   id: string;
   name: string;
@@ -22,6 +27,9 @@ export interface CronJob {
   scheduleType: ScheduleType;
   isActive: boolean;
   requestTimeout?: number; // Timeout in milliseconds
+  executionMode: ExecutionMode;
+  maxConcurrent: number;
+  currentRunning: number;
   createdAt: string;
   updatedAt: string;
   lastExecutedAt?: string;
@@ -39,6 +47,8 @@ export interface CreateCronJobDto {
   scheduleType: ScheduleType;
   isActive?: boolean;
   requestTimeout?: number; // Timeout in milliseconds
+  executionMode?: ExecutionMode;
+  maxConcurrent?: number;
 }
 
 export interface UpdateCronJobDto extends Partial<CreateCronJobDto> {}

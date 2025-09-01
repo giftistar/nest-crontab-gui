@@ -56,6 +56,25 @@
                 </div>
                 
                 <div class="info-item">
+                  <span class="label">Execution Mode:</span>
+                  <mat-chip [color]="job.executionMode === 'parallel' ? 'accent' : 'primary'" selected>
+                    {{ job.executionMode | uppercase }}
+                  </mat-chip>
+                </div>
+                
+                <div class="info-item">
+                  <span class="label">Max Concurrent:</span>
+                  <span class="value">{{ job.maxConcurrent }}</span>
+                </div>
+                
+                <div class="info-item">
+                  <span class="label">Currently Running:</span>
+                  <span class="value" [style.color]="job.currentRunning > 0 ? '#2e7d32' : 'inherit'">
+                    {{ job.currentRunning }}/{{ job.maxConcurrent }}
+                  </span>
+                </div>
+                
+                <div class="info-item">
                   <span class="label">Status:</span>
                   <mat-slide-toggle [checked]="job.isActive" 
                                     (change)="toggleJobStatus()"

@@ -14,7 +14,7 @@ import {
   ValidationArguments,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { HttpMethod, ScheduleType } from '../entities/cronjob.entity';
+import { HttpMethod, ScheduleType, ExecutionMode } from '../entities/cronjob.entity';
 import { Transform } from 'class-transformer';
 
 // Custom validator for Docker-compatible URLs
@@ -250,4 +250,27 @@ export class CreateCronJobDto {
   @Min(1000, { message: 'Request timeout must be at least 1000ms (1 second)' })
   @Max(300000, { message: 'Request timeout cannot exceed 300000ms (300 seconds)' })
   requestTimeout?: number;
+
+  @ApiPropertyOptional({
+    description: 'Execution mode (sequential or parallel)',
+    enum: ExecutionMode,
+    example: ExecutionMode.SEQUENTIAL,
+    default: ExecutionMode.SEQUENTIAL,
+  })
+  @IsOptional()
+  @IsEnum(ExecutionMode, { message: 'Execution mode must be "sequential" or "parallel"' })
+  executionMode?: ExecutionMode = ExecutionMode.SEQUENTIAL;
+
+  @ApiPropertyOptional({
+    description: 'Maximum concurrent executions (1-100)',
+    example: 1,
+    minimum: 1,
+    maximum: 100,
+    default: 1,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1, { message: 'Max concurrent must be at least 1' })
+  @Max(100, { message: 'Max concurrent cannot exceed 100' })
+  maxConcurrent?: number = 1;
 }

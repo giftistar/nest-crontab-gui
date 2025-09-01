@@ -3,7 +3,7 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob as NestCronJob } from 'cron';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CronJob, ScheduleType } from '../entities/cronjob.entity';
+import { CronJob, ScheduleType, ExecutionMode } from '../entities/cronjob.entity';
 import { HttpClientService } from './http-client.service';
 import { ScheduleParserService } from './schedule-parser.service';
 
@@ -19,6 +19,7 @@ interface JobRegistry {
   lastRun?: Date;
   nextRun?: Date;
   isExecuting: boolean;
+  runningCount: number;
 }
 
 @Injectable()
@@ -85,6 +86,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
         status: JobStatus.IDLE,
         isExecuting: false,
         nextRun: this.calculateNextRun(job),
+        runningCount: 0,
       });
 
       this.logger.log(`Job "${job.name}" (${job.id}) registered successfully`);
@@ -169,12 +171,6 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async executeJob(jobId: string, triggeredManually: boolean = false): Promise<void> {
-    // Check if job is already running
-    if (this.runningJobs.has(jobId)) {
-      this.logger.warn(`Job ${jobId} is already running, skipping execution`);
-      return;
-    }
-
     const registryEntry = this.jobRegistry.get(jobId);
     if (!registryEntry) {
       this.logger.error(`Job ${jobId} not found in registry`);
@@ -194,34 +190,74 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    this.runningJobs.add(jobId);
+    // Check execution mode and concurrent limits
+    if (job.executionMode === ExecutionMode.SEQUENTIAL) {
+      // Sequential mode: skip if already running
+      if (registryEntry.runningCount > 0) {
+        this.logger.warn(`Job ${jobId} is already running in sequential mode, skipping execution`);
+        return;
+      }
+    } else if (job.executionMode === ExecutionMode.PARALLEL) {
+      // Parallel mode: check max concurrent limit
+      if (registryEntry.runningCount >= job.maxConcurrent) {
+        this.logger.warn(`Job ${jobId} has reached max concurrent limit (${job.maxConcurrent}), skipping execution`);
+        return;
+      }
+    }
+
+    // Increment running count
+    registryEntry.runningCount++;
     registryEntry.status = JobStatus.RUNNING;
-    registryEntry.isExecuting = true;
     registryEntry.lastRun = new Date();
 
-    this.logger.log(`Executing job "${job.name}" (${jobId})`);
+    // Update currentRunning in database
+    await this.cronJobRepository.update(jobId, {
+      currentRunning: registryEntry.runningCount,
+    });
 
+    this.logger.log(`Executing job "${job.name}" (${jobId}) - Running: ${registryEntry.runningCount}/${job.maxConcurrent}`);
+
+    // Execute in a separate async context to allow parallel execution
+    this.executeJobAsync(job, registryEntry, triggeredManually).catch(error => {
+      this.logger.error(`Error in async job execution for "${job.name}": ${error.message}`);
+    });
+  }
+
+  private async executeJobAsync(
+    job: CronJob,
+    registryEntry: JobRegistry,
+    triggeredManually: boolean,
+  ): Promise<void> {
     try {
       // Execute HTTP request
       const result = await this.httpClientService.executeRequest(job, triggeredManually);
 
       // Update job statistics
-      await this.cronJobRepository.update(jobId, {
+      await this.cronJobRepository.update(job.id, {
         lastExecutedAt: new Date(),
         executionCount: job.executionCount + 1,
       });
 
-      registryEntry.status = result.status === 'success' ? JobStatus.IDLE : JobStatus.ERROR;
-      
       this.logger.log(
-        `Job "${job.name}" executed ${result.status === 'success' ? 'successfully' : 'with errors'}${triggeredManually ? ' (manually triggered)' : ''}`,
+        `Job "${job.name}" executed ${result.status === 'success' ? 'successfully' : 'with errors'}${triggeredManually ? ' (manually triggered)' : ''} - Running: ${registryEntry.runningCount}/${job.maxConcurrent}`,
       );
     } catch (error) {
-      registryEntry.status = JobStatus.ERROR;
       this.logger.error(`Error executing job "${job.name}": ${error.message}`);
     } finally {
-      this.runningJobs.delete(jobId);
-      registryEntry.isExecuting = false;
+      // Decrement running count
+      registryEntry.runningCount--;
+      
+      // Update status based on running count
+      if (registryEntry.runningCount === 0) {
+        registryEntry.status = JobStatus.IDLE;
+        registryEntry.isExecuting = false;
+      }
+
+      // Update currentRunning in database
+      await this.cronJobRepository.update(job.id, {
+        currentRunning: registryEntry.runningCount,
+      });
+
       registryEntry.nextRun = this.calculateNextRun(job);
     }
   }

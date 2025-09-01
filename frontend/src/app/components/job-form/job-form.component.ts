@@ -16,7 +16,7 @@ import { catchError, of, switchMap } from 'rxjs';
 
 import { JobService } from '../../services/job.service';
 import { ScheduleValidatorService } from '../../services/schedule-validator.service';
-import { CronJob, CreateCronJobDto, UpdateCronJobDto, HttpMethod, ScheduleType } from '../../models/cronjob.model';
+import { CronJob, CreateCronJobDto, UpdateCronJobDto, HttpMethod, ScheduleType, ExecutionMode } from '../../models/cronjob.model';
 
 @Component({
   selector: 'app-job-form',
@@ -47,6 +47,7 @@ export class JobFormComponent implements OnInit {
   
   httpMethods = Object.values(HttpMethod);
   scheduleTypes = Object.values(ScheduleType);
+  executionModes = Object.values(ExecutionMode);
 
   constructor(
     private fb: FormBuilder,
@@ -72,6 +73,17 @@ export class JobFormComponent implements OnInit {
     this.jobForm.get('scheduleType')?.valueChanges.subscribe(() => {
       this.jobForm.get('schedule')?.updateValueAndValidity();
     });
+
+    // Watch execution mode changes to handle max concurrent field
+    this.jobForm.get('executionMode')?.valueChanges.subscribe((mode) => {
+      const maxConcurrentControl = this.jobForm.get('maxConcurrent');
+      if (mode === ExecutionMode.SEQUENTIAL) {
+        maxConcurrentControl?.setValue(1);
+        maxConcurrentControl?.disable();
+      } else {
+        maxConcurrentControl?.enable();
+      }
+    });
   }
 
   private createForm(): FormGroup {
@@ -85,7 +97,9 @@ export class JobFormComponent implements OnInit {
       schedule: ['0 0 * * *', [Validators.required, this.validateSchedule.bind(this)]],
       scheduleType: [ScheduleType.CRON, Validators.required],
       isActive: [true],
-      requestTimeout: ['', [Validators.min(1), Validators.max(300)]]
+      requestTimeout: ['', [Validators.min(1), Validators.max(300)]],
+      executionMode: [ExecutionMode.SEQUENTIAL, Validators.required],
+      maxConcurrent: [1, [Validators.required, Validators.min(1), Validators.max(100)]]
     });
   }
 
