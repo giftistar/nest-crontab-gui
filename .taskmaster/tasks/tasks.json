@@ -2,698 +2,362 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
-        "title": "Initialize NestJS Project Structure",
-        "description": "Set up the foundational NestJS TypeScript project with proper directory structure, dependencies, and configuration files",
-        "details": "Use NestJS CLI to generate new project with TypeScript. Install core dependencies: @nestjs/core, @nestjs/common, @nestjs/platform-express, @nestjs/typeorm, @nestjs/schedule, @nestjs/config, @nestjs/swagger, typeorm, sqlite3, reflect-metadata, rxjs. Create src/main.ts entry point, app.module.ts root module, and basic folder structure (controllers/, services/, entities/, dto/). Configure tsconfig.json and nest-cli.json. Set up package.json scripts for development and production builds.",
-        "testStrategy": "Verify project compiles with 'npm run build', starts with 'npm run start', and serves on port 4000. Check that NestJS application context initializes without errors and basic health endpoint responds.",
+        "id": 11,
+        "title": "Add MySQL Dependencies and Database Configuration Service",
+        "description": "Install mysql2 driver and create a configurable database service to support both SQLite and MySQL connections",
+        "details": "1. Install mysql2 package via npm\n2. Create DatabaseConfigService with environment-based switching\n3. Update app.module.ts to use dynamic database configuration\n4. Add MySQL environment variables to .env.example\n5. Implement connection pooling and timeout configurations\n6. Create database factory that returns appropriate TypeORM configuration based on DB_TYPE env var",
+        "testStrategy": "Unit tests for DatabaseConfigService with both SQLite and MySQL configurations. Integration tests to verify successful connections to both database types.",
         "priority": "high",
         "dependencies": [],
-        "status": "done",
+        "status": "pending",
         "subtasks": [
           {
             "id": 1,
-            "title": "Generate NestJS Project with CLI",
-            "description": "Use NestJS CLI to create new TypeScript project with standard scaffolding",
+            "title": "Install mysql2 Package and Update Dependencies",
+            "description": "Install the mysql2 driver package and update package.json with the MySQL database dependency",
             "dependencies": [],
-            "details": "Run 'nest new nest-crontab-gui' command to generate project structure. Select npm as package manager. Verify project structure includes src/, test/, and configuration files. Remove default controller and service files that won't be needed.",
-            "status": "done",
-            "testStrategy": ""
+            "details": "Run `npm install mysql2` to add MySQL database driver. Verify the package is added to dependencies in package.json. The mysql2 package will provide the MySQL driver for TypeORM to connect to MySQL databases.",
+            "status": "pending",
+            "testStrategy": "Verify mysql2 package is listed in package.json dependencies. Test that the package can be imported without errors."
           },
           {
             "id": 2,
-            "title": "Install and Configure Core Dependencies",
-            "description": "Install all required NestJS and TypeORM dependencies with proper versions",
+            "title": "Create DatabaseConfigService with Environment-Based Database Type Switching",
+            "description": "Create a new service that provides TypeORM configuration based on environment variables for both SQLite and MySQL",
             "dependencies": [
-              "1.1"
+              "11.1"
             ],
-            "details": "Install @nestjs/core, @nestjs/common, @nestjs/platform-express, @nestjs/typeorm, @nestjs/schedule, @nestjs/config, @nestjs/swagger, typeorm, sqlite3, reflect-metadata, rxjs. Update package.json with development and production scripts. Configure tsconfig.json for TypeScript compilation settings.",
-            "status": "done",
-            "testStrategy": ""
+            "details": "Create src/services/database-config.service.ts that exports a DatabaseConfigService class. The service should read DB_TYPE environment variable (default: 'sqlite') and return appropriate TypeORM configuration. For SQLite: use existing configuration. For MySQL: return configuration with mysql2 driver, connection pooling, and proper MySQL settings. Include connection timeout, pool size, and charset configurations.",
+            "status": "pending",
+            "testStrategy": "Unit tests to verify correct configuration returned for both 'sqlite' and 'mysql' DB_TYPE values. Test default behavior when DB_TYPE is not set."
           },
           {
             "id": 3,
-            "title": "Create Basic Folder Structure and Entry Points",
-            "description": "Set up organized directory structure with main application files",
+            "title": "Update app.module.ts to Use Dynamic Database Configuration",
+            "description": "Modify the TypeORM configuration in app.module.ts to use the DatabaseConfigService for dynamic database selection",
             "dependencies": [
-              "1.2"
+              "11.2"
             ],
-            "details": "Create src/controllers/, src/services/, src/entities/, src/dto/ directories. Set up src/main.ts with NestJS application bootstrap. Create app.module.ts as root module with basic imports. Add health check endpoint for application readiness verification.",
-            "status": "done",
-            "testStrategy": ""
+            "details": "Replace the static TypeORM.forRoot() configuration in app.module.ts with TypeOrmModule.forRootAsync() that uses DatabaseConfigService. Import ConfigModule to enable environment variable access. The module should inject DatabaseConfigService and call a method to get the database configuration based on the current environment settings.",
+            "status": "pending",
+            "testStrategy": "Integration tests to verify the module loads correctly with both SQLite and MySQL configurations. Test that the correct database type is used based on environment variables."
           },
           {
             "id": 4,
-            "title": "Configure Build Scripts and Verify Setup",
-            "description": "Set up package.json scripts and validate project compilation and startup",
-            "dependencies": [
-              "1.3"
-            ],
-            "details": "Configure nest-cli.json build settings. Add npm scripts for start, start:dev, build, test. Test project builds successfully with 'npm run build' and starts on port 4000 with 'npm run start:dev'. Verify health endpoint responds correctly.",
-            "status": "done",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 2,
-        "title": "Configure SQLite Database with TypeORM",
-        "description": "Set up SQLite database connection using TypeORM with proper entity configuration and migration support",
-        "details": "Configure TypeORM in app.module.ts with SQLite connection settings, database file location in ./data directory. Create database/entities directory. Implement CronJob entity with fields: id (uuid), name (string), url (string), method (GET|POST enum), headers (json), schedule (string), scheduleType (cron|repeat enum), isActive (boolean), createdAt, updatedAt. Implement ExecutionLog entity with fields: id (uuid), jobId (string), job (ManyToOne relation), executedAt (Date), status (success|error enum), responseCode (number), responseTime (number), responseBody (text), errorMessage (nullable string), triggeredManually (boolean). Enable synchronize for development, set up proper indexes.",
-        "testStrategy": "Test database connection on app startup, verify entities are created in SQLite file, test basic CRUD operations on both entities using TypeORM repository methods. Verify relationships work correctly between CronJob and ExecutionLog.",
-        "priority": "high",
-        "dependencies": [
-          1
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Configure TypeORM Module and Database Connection",
-            "description": "Set up TypeORM module configuration in app.module.ts with SQLite database connection and data directory setup",
+            "title": "Add MySQL Environment Variables to .env.example",
+            "description": "Update the .env.example file to include all necessary MySQL connection environment variables",
             "dependencies": [],
-            "details": "Configure TypeORM module in app.module.ts with SQLite driver, database file path pointing to ./data/database.sqlite. Create data directory if it doesn't exist. Set up proper development configuration with synchronize enabled. Configure entities array and autoLoadEntities option.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Create CronJob Entity with Fields and Validations",
-            "description": "Implement CronJob entity with all required fields, enums, and proper TypeORM decorators",
-            "dependencies": [
-              "2.1"
-            ],
-            "details": "Create database/entities/cronjob.entity.ts with fields: id (UUID primary key), name (string), url (string), method (enum GET|POST), headers (JSON type), schedule (string), scheduleType (enum cron|repeat), isActive (boolean), createdAt, updatedAt. Add proper column decorators, constraints, and indexes.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Create ExecutionLog Entity with Relationships",
-            "description": "Implement ExecutionLog entity with all fields and ManyToOne relationship to CronJob",
-            "dependencies": [
-              "2.2"
-            ],
-            "details": "Create database/entities/execution-log.entity.ts with fields: id (UUID), jobId (string), job (ManyToOne to CronJob), executedAt (Date), status (enum success|error), responseCode (number), responseTime (number), responseBody (text), errorMessage (nullable string), triggeredManually (boolean). Set up proper foreign key relationship and cascade options.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Set Up Database Directory and Entity Registration",
-            "description": "Create database entities directory structure and register entities with TypeORM",
-            "dependencies": [
-              "2.3"
-            ],
-            "details": "Create database/entities/index.ts barrel file to export all entities. Update app.module.ts to import and register CronJob and ExecutionLog entities. Ensure proper entity scanning and autoload configuration. Create data directory with proper permissions for SQLite file.",
-            "status": "done",
-            "testStrategy": ""
+            "details": "Add the following environment variables to .env.example: DB_TYPE (sqlite/mysql), MYSQL_HOST, MYSQL_PORT, MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_DATABASE, MYSQL_CONNECTION_TIMEOUT, MYSQL_POOL_SIZE, MYSQL_CHARSET. Include comments explaining each variable's purpose and provide example values.",
+            "status": "pending",
+            "testStrategy": "Verify .env.example contains all required MySQL variables with appropriate default values and documentation comments."
           },
           {
             "id": 5,
-            "title": "Test Database Connection and Entity Relationships",
-            "description": "Verify database connection, entity creation, and test basic CRUD operations with relationships",
+            "title": "Implement Connection Pooling and Database Factory Pattern",
+            "description": "Create a database factory that returns optimized TypeORM configuration with connection pooling for both database types",
             "dependencies": [
-              "2.4"
+              "11.2"
             ],
-            "details": "Create basic test to verify database connection on app startup. Test entity creation in SQLite file. Implement basic CRUD operations using TypeORM repository methods for both entities. Verify ManyToOne relationship between ExecutionLog and CronJob works correctly. Test JSON field handling for headers.",
-            "status": "done",
-            "testStrategy": ""
+            "details": "Extend DatabaseConfigService to include a factory method that returns complete TypeORM DataSource configuration. Implement connection pooling settings: for MySQL use pool size 5-20, connection timeout 60000ms, acquire timeout 60000ms. For SQLite, implement appropriate connection settings. Add retry logic and connection validation. Include proper error handling for connection failures.",
+            "status": "pending",
+            "testStrategy": "Test connection pooling settings are applied correctly. Verify connection timeout and retry logic work as expected. Test that connections are properly managed and released."
           }
         ]
       },
       {
-        "id": 3,
-        "title": "Implement Schedule Parser Service",
-        "description": "Create service to parse and validate both repeat format (5s, 1m, 1h) and traditional crontab expressions",
-        "details": "Create src/services/schedule-parser.service.ts with methods: parseRepeatInterval(schedule: string) -> milliseconds, parseCronExpression(schedule: string) -> validation, validateSchedule(schedule: string, type: 'cron' | 'repeat') -> boolean. Support repeat format regex: /^(\\d+)([smh])$/ for seconds, minutes, hours. Use node-cron or similar library for crontab validation. Handle edge cases like '0s' (invalid), maximum intervals (24h), minimum intervals (1s). Return standardized schedule objects with nextExecutionTime calculation.",
-        "testStrategy": "Unit tests for various schedule formats: '30s', '5m', '2h', '*/30 * * * * *', '0 0 * * * *'. Test invalid formats return false, valid formats return correct milliseconds/cron objects. Verify edge cases and boundary conditions.",
+        "id": 12,
+        "title": "Design and Create Tag Entity with Database Schema",
+        "description": "Create the Tag entity with proper MySQL-compatible schema, including junction table for many-to-many relationships",
+        "details": "1. Create Tag entity with id(uuid), name(varchar 50), color(varchar 7), usageCount(int), createdAt, updatedAt\n2. Add unique constraint on tag name with index\n3. Create junction table cronjob_tags with composite primary key\n4. Update CronJob entity to include @ManyToMany relationship with Tag\n5. Add cascade options for tag operations\n6. Ensure MySQL compatibility with proper column types and indexes",
+        "testStrategy": "Unit tests for Tag entity validation. Database schema tests to verify proper table creation, indexes, and foreign key constraints. Test cascade operations for tag deletion.",
+        "priority": "high",
+        "dependencies": [
+          11
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Tag Entity with UUID Primary Key and MySQL-Compatible Schema",
+            "description": "Create the Tag entity class with proper TypeORM decorators for MySQL compatibility, including UUID primary key, name validation, color field, and usage tracking",
+            "dependencies": [],
+            "details": "Create Tag entity in src/entities/tag.entity.ts with @Entity('tags') decorator, UUID primary key using @PrimaryGeneratedColumn('uuid'), name column with @Column({ length: 50, unique: true }), color column with @Column({ length: 7, default: '#808080' }) for hex colors, usageCount column with @Column({ type: 'int', default: 0 }), and @CreateDateColumn() and @UpdateDateColumn() for timestamps. Add @Index() on name column for performance.",
+            "status": "pending",
+            "testStrategy": "Unit tests for Tag entity validation including name length limits, color hex format validation, and UUID generation"
+          },
+          {
+            "id": 2,
+            "title": "Create Junction Table Schema for CronJob-Tag Many-to-Many Relationship",
+            "description": "Define the database schema for the cronjob_tags junction table with composite primary key and proper foreign key constraints",
+            "dependencies": [
+              "12.1"
+            ],
+            "details": "Create cronjob_tags junction table using TypeORM @JoinTable decorator with explicit configuration: @JoinTable({ name: 'cronjob_tags', joinColumn: { name: 'cronjobId', referencedColumnName: 'id' }, inverseJoinColumn: { name: 'tagId', referencedColumnName: 'id' } }). Ensure composite primary key on (cronjobId, tagId) and proper foreign key constraints with CASCADE options.",
+            "status": "pending",
+            "testStrategy": "Database schema tests to verify junction table creation, composite primary key constraints, and foreign key relationships"
+          },
+          {
+            "id": 3,
+            "title": "Update CronJob Entity with Many-to-Many Tag Relationship",
+            "description": "Modify the existing CronJob entity to include the many-to-many relationship with Tag entity and proper cascade options",
+            "dependencies": [
+              "12.1",
+              "12.2"
+            ],
+            "details": "Add to CronJob entity: @ManyToMany(() => Tag, { cascade: ['insert', 'update'], onDelete: 'CASCADE' }) @JoinTable({ name: 'cronjob_tags' }) tags: Tag[]. Import Tag entity and ManyToMany, JoinTable decorators from typeorm. Update the entity imports in app.module.ts to include Tag entity.",
+            "status": "pending",
+            "testStrategy": "Integration tests for CronJob entity with tag relationships, testing cascade operations and proper loading of associated tags"
+          },
+          {
+            "id": 4,
+            "title": "Update AppModule to Include Tag Entity in TypeORM Configuration",
+            "description": "Modify app.module.ts to register the new Tag entity with TypeORM and ensure proper database synchronization",
+            "dependencies": [
+              "12.1"
+            ],
+            "details": "Update app.module.ts TypeOrmModule.forRoot configuration to include Tag in entities array: entities: [CronJob, ExecutionLog, Tag]. Import Tag entity at the top of the file. Ensure synchronize option is enabled for development to auto-create tables and relationships.",
+            "status": "pending",
+            "testStrategy": "Integration tests to verify Tag entity is properly registered and tables are created during application startup"
+          },
+          {
+            "id": 5,
+            "title": "Create Database Indexes and Constraints for Tag Operations",
+            "description": "Add appropriate database indexes and constraints to optimize tag queries and ensure data integrity",
+            "dependencies": [
+              "12.1",
+              "12.2",
+              "12.3"
+            ],
+            "details": "Add @Index() decorators to Tag entity: unique index on name column for fast lookups and constraint enforcement, index on usageCount for sorting operations, and index on createdAt for chronological queries. Add validation constraints using class-validator decorators: @IsString(), @Length(1, 50) for name, @Matches(/^#[0-9A-Fa-f]{6}$/) for color hex format.",
+            "status": "pending",
+            "testStrategy": "Database performance tests to verify index usage, constraint validation tests for tag name uniqueness and color format, and data integrity tests for cascade operations"
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Update Existing Entities for MySQL Compatibility",
+        "description": "Modify CronJob and ExecutionLog entities to ensure full MySQL compatibility with optimized column types",
+        "details": "1. Convert UUID fields from TEXT to proper MySQL UUID handling\n2. Update datetime fields to use MySQL DATETIME type\n3. Convert TEXT fields to appropriate VARCHAR/TEXT/MEDIUMTEXT based on content size\n4. Update enum handling for MySQL compatibility\n5. Optimize indexes for MySQL query planner\n6. Add proper character set (utf8mb4) and collation settings\n7. Test all entity relationships work correctly with MySQL",
+        "testStrategy": "Database compatibility tests for all entity operations. Verify data type conversions work correctly. Test enum handling and datetime operations with MySQL.",
+        "priority": "high",
+        "dependencies": [
+          12
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update CronJob Entity UUID and Enum Handling for MySQL",
+            "description": "Modify the CronJob entity to properly handle UUID fields and enums for MySQL compatibility",
+            "dependencies": [],
+            "details": "Update @PrimaryGeneratedColumn('uuid') to use proper MySQL UUID handling with @Column({ type: 'varchar', length: 36 }). Convert enum columns (method, scheduleType, executionMode) from 'text' type to proper MySQL enum syntax with @Column({ type: 'enum', enum: EnumName }). Ensure all UUID fields use consistent VARCHAR(36) typing for MySQL compatibility.",
+            "status": "pending",
+            "testStrategy": "Test UUID generation and retrieval. Verify enum values are properly constrained and stored. Test entity creation and updates with MySQL database."
+          },
+          {
+            "id": 2,
+            "title": "Optimize CronJob Text Fields for MySQL Storage",
+            "description": "Convert TEXT columns to appropriate VARCHAR/TEXT/MEDIUMTEXT based on expected content size for better MySQL performance",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Analyze content size requirements: Convert 'url' from TEXT to VARCHAR(2048), 'headers' to TEXT, 'body' to MEDIUMTEXT for large payloads, 'description' to VARCHAR(1000). Update column definitions with appropriate length constraints. Add proper character set (utf8mb4) and collation (utf8mb4_unicode_ci) for international character support.",
+            "status": "pending",
+            "testStrategy": "Test storage and retrieval of various content sizes. Verify character encoding works with special characters. Test performance impact of different column types."
+          },
+          {
+            "id": 3,
+            "title": "Update ExecutionLog Entity for MySQL Compatibility",
+            "description": "Modify the ExecutionLog entity to use proper MySQL data types and optimize storage",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Convert @PrimaryGeneratedColumn('uuid') to VARCHAR(36). Update 'jobId' from 'uuid' type to 'varchar' length 36. Change 'status' enum from 'text' type to proper MySQL enum. Convert 'responseBody' and 'errorMessage' from TEXT to MEDIUMTEXT for larger content. Ensure datetime columns use proper MySQL DATETIME type with timezone handling.",
+            "status": "pending",
+            "testStrategy": "Test ExecutionLog creation with various response sizes. Verify foreign key relationships work correctly. Test enum constraint validation and datetime operations."
+          },
+          {
+            "id": 4,
+            "title": "Optimize MySQL Indexes and Performance",
+            "description": "Review and optimize existing indexes for MySQL query planner and add composite indexes where beneficial",
+            "dependencies": [
+              "13.2",
+              "13.3"
+            ],
+            "details": "Review existing @Index annotations and optimize for MySQL. Add composite indexes for common query patterns like @Index(['isActive', 'scheduleType']), @Index(['jobId', 'executedAt']) for ExecutionLog. Consider adding indexes on frequently filtered columns. Ensure index names are MySQL-compatible and don't exceed length limits. Add database-specific performance optimizations.",
+            "status": "pending",
+            "testStrategy": "Run query performance tests before and after index optimization. Use MySQL EXPLAIN to verify query plans. Test index usage with realistic data volumes."
+          },
+          {
+            "id": 5,
+            "title": "Add MySQL Character Set Configuration and Entity Validation",
+            "description": "Configure proper character sets and collations, and validate all entity relationships work correctly with MySQL",
+            "dependencies": [
+              "13.1",
+              "13.2",
+              "13.3",
+              "13.4"
+            ],
+            "details": "Add @Entity table options with charset and collation: @Entity('cronjobs', { charset: 'utf8mb4', collation: 'utf8mb4_unicode_ci' }). Test all OneToMany and ManyToOne relationships work correctly with new MySQL column types. Verify CASCADE operations function properly. Add validation decorators where appropriate. Test data migration compatibility between old and new schema.",
+            "status": "pending",
+            "testStrategy": "Test complete entity lifecycle (CRUD operations) with MySQL. Verify relationship cascading works correctly. Test international character storage and retrieval. Validate schema changes don't break existing functionality."
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Create Tag Repository and Service Layer",
+        "description": "Implement comprehensive Tag management service with CRUD operations, usage tracking, and efficient querying",
+        "details": "1. Create TagRepository extending TypeORM Repository\n2. Implement TagService with methods: create, findAll, findById, update, delete, searchByName\n3. Add usage count tracking and automatic increment/decrement\n4. Implement tag search with autocomplete functionality\n5. Add bulk operations for tag management\n6. Create efficient queries for tag filtering with job counts\n7. Add validation for tag name uniqueness and color format",
+        "testStrategy": "Unit tests for all TagService methods. Test usage count tracking accuracy. Performance tests for tag search and filtering operations. Test bulk operations and transaction handling.",
         "priority": "medium",
         "dependencies": [
-          2
+          12
         ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement Repeat Interval Parser",
-            "description": "Create logic to parse repeat format strings (5s, 1m, 1h) and convert to milliseconds",
-            "dependencies": [],
-            "details": "Implement parseRepeatInterval(schedule: string) method with regex /^(\\d+)([smh])$/ to extract number and unit. Convert seconds (*1000), minutes (*60000), hours (*3600000) to milliseconds. Validate minimum 1s and maximum 24h limits. Handle edge cases like '0s' (invalid), non-numeric values, and unsupported units.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement Cron Expression Validation",
-            "description": "Create cron expression validation using node-cron library",
-            "dependencies": [],
-            "details": "Install and integrate node-cron library. Implement parseCronExpression(schedule: string) method to validate traditional crontab expressions. Return validation result with parsed cron object. Handle various cron formats including seconds field support. Provide clear error messages for invalid expressions.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Create Schedule Validation Service",
-            "description": "Build unified validation service with comprehensive edge case handling",
-            "dependencies": [
-              "3.1",
-              "3.2"
-            ],
-            "details": "Implement validateSchedule(schedule: string, type: 'cron' | 'repeat') method that routes to appropriate parser. Create comprehensive validation logic for edge cases: empty strings, null values, malformed formats. Return boolean validation results with descriptive error messages. Add input sanitization and type checking.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Implement Next Execution Time Calculator",
-            "description": "Create functionality to calculate next execution time for both schedule types",
-            "dependencies": [
-              "3.1",
-              "3.2"
-            ],
-            "details": "Implement calculateNextExecution(schedule: string, type: 'cron' | 'repeat') method. For repeat intervals, add milliseconds to current time. For cron expressions, use node-cron to calculate next valid execution time. Return standardized schedule objects with nextExecutionTime field. Handle timezone considerations and daylight saving time transitions.",
-            "status": "done",
-            "testStrategy": ""
-          }
-        ]
+        "status": "pending",
+        "subtasks": []
       },
       {
-        "id": 4,
-        "title": "Create CronJob CRUD Controller and DTOs",
-        "description": "Implement REST API endpoints for cron job management with proper validation and DTOs",
-        "details": "Create src/controllers/cronjob.controller.ts with endpoints: GET /api/jobs (list all), GET /api/jobs/:id (get one), POST /api/jobs (create), PUT /api/jobs/:id (update), DELETE /api/jobs/:id (delete). Create src/dto/create-cronjob.dto.ts and update-cronjob.dto.ts with class-validator decorators. Validate schedule format based on scheduleType, URL format, HTTP method enum, headers as key-value pairs. Implement src/services/cronjob.service.ts with TypeORM repository injection. Add proper error handling with HTTP exceptions. Use @ApiTags and @ApiOperation for Swagger documentation.",
-        "testStrategy": "Unit tests for service methods using in-memory database. Integration tests for all endpoints using supertest. Test validation errors for invalid data, successful CRUD operations, proper HTTP status codes, and error responses.",
+        "id": 15,
+        "title": "Create TypeORM Migration Scripts",
+        "description": "Generate comprehensive TypeORM migrations for database schema changes and data structure updates",
+        "details": "1. Generate initial migration for MySQL schema creation\n2. Create migration for Tag entity and junction table\n3. Create migration for CronJob entity updates (add tag relationships)\n4. Generate migration for ExecutionLog entity MySQL compatibility\n5. Add rollback migrations for all changes\n6. Create migration validation scripts to verify schema integrity\n7. Add migration scripts to package.json for easy execution",
+        "testStrategy": "Test all migrations run successfully on clean MySQL database. Test rollback functionality works correctly. Verify schema matches expected structure after migration.",
         "priority": "high",
         "dependencies": [
-          3
+          13
         ],
-        "status": "done",
+        "status": "pending",
         "subtasks": [
           {
             "id": 1,
-            "title": "Create DTO classes with validation decorators",
-            "description": "Implement CreateCronJobDto and UpdateCronJobDto with class-validator decorators for input validation",
+            "title": "Generate Initial MySQL Schema Creation Migration",
+            "description": "Create the primary migration file to set up MySQL database schema with optimized structure for CronJob and ExecutionLog entities",
             "dependencies": [],
-            "details": "Create src/dto/create-cronjob.dto.ts and src/dto/update-cronjob.dto.ts with proper validation decorators. Include validation for name (@IsString, @IsNotEmpty), description (@IsOptional, @IsString), url (@IsUrl), method (@IsEnum for HttpMethod), scheduleType (@IsEnum), schedule (@IsString with custom validation), headers (@IsOptional, @ValidateNested), and isActive (@IsBoolean, @IsOptional). Add custom validator for cron expression format validation.",
-            "status": "done",
-            "testStrategy": ""
+            "details": "Use TypeORM CLI to generate migration with 'typeorm migration:generate InitialMySQLSchema'. Create migration files in src/migrations/ directory. Include proper MySQL data types: VARCHAR(36) for UUIDs, ENUM for status fields, DATETIME for timestamps, MEDIUMTEXT for large content. Add proper indexes, constraints, and foreign key relationships. Configure utf8mb4 charset and unicode_ci collation for all tables. Include connection pooling and performance optimizations in migration configuration.",
+            "status": "pending",
+            "testStrategy": "Test migration runs successfully on clean MySQL database. Verify all tables, indexes, and constraints are created correctly. Test rollback functionality. Validate schema matches entity definitions."
           },
           {
             "id": 2,
-            "title": "Implement CronJob service layer with TypeORM",
-            "description": "Create service class with TypeORM repository injection for database operations",
+            "title": "Create Tag Entity and Junction Table Migration",
+            "description": "Generate migration for Tag entity and cronjob_tags junction table to support many-to-many relationships",
             "dependencies": [
-              "4.1"
+              "15.1"
             ],
-            "details": "Create src/services/cronjob.service.ts with @Injectable decorator. Inject CronJob repository using @InjectRepository. Implement methods: findAll(), findOne(id), create(createDto), update(id, updateDto), remove(id). Add proper error handling for not found cases. Include validation for schedule format based on scheduleType. Return appropriate DTOs and handle database exceptions with meaningful error messages.",
-            "status": "done",
-            "testStrategy": ""
+            "details": "Create migration file for Tag table with id (VARCHAR(36)), name (VARCHAR(50) UNIQUE), color (VARCHAR(7)), usageCount (INT), createdAt/updatedAt (DATETIME). Add unique index on name field. Create cronjob_tags junction table with composite primary key (cronjobId, tagId) and foreign key constraints. Include proper CASCADE delete behavior. Configure proper MySQL storage engine (InnoDB) for transaction support. Add validation constraints for color format (hex) and name length.",
+            "status": "pending",
+            "testStrategy": "Test tag table creation and junction table relationships. Verify unique constraints work correctly. Test cascade operations and foreign key constraints. Validate many-to-many associations function properly."
           },
           {
             "id": 3,
-            "title": "Create GET endpoints for job retrieval",
-            "description": "Implement GET /api/jobs and GET /api/jobs/:id endpoints with proper response formatting",
+            "title": "Create CronJob Tag Relationships Migration",
+            "description": "Generate migration to add tag relationship columns and update existing CronJob entity structure for MySQL compatibility",
             "dependencies": [
-              "4.2"
+              "15.2"
             ],
-            "details": "Create src/controllers/cronjob.controller.ts with @Controller('api/jobs'). Implement GET / endpoint to return all jobs with pagination support. Implement GET /:id endpoint with UUID validation using @Param and ValidationPipe. Add proper HTTP status codes, transform responses using class-transformer. Include error handling for not found cases with @NotFoundException. Add @ApiTags('CronJobs') and @ApiOperation decorators for Swagger documentation.",
-            "status": "done",
-            "testStrategy": ""
+            "details": "Create migration to modify CronJob table: convert UUID fields to VARCHAR(36), update enum columns from TEXT to proper MySQL ENUM types (method, scheduleType, executionMode), optimize TEXT fields to VARCHAR/MEDIUMTEXT based on content size. Add any missing indexes for tag relationships. Update foreign key constraints for execution logs relationship. Ensure all column types are MySQL-optimized for performance.",
+            "status": "pending",
+            "testStrategy": "Test CronJob entity updates with tag relationships. Verify enum handling works correctly in MySQL. Test data integrity during column type conversions. Validate performance improvements with new column types."
           },
           {
             "id": 4,
-            "title": "Create POST and PUT endpoints for job management",
-            "description": "Implement POST /api/jobs and PUT /api/jobs/:id endpoints with validation",
+            "title": "Create ExecutionLog MySQL Compatibility Migration",
+            "description": "Generate migration to update ExecutionLog entity for full MySQL compatibility and performance optimization",
             "dependencies": [
-              "4.3"
+              "15.3"
             ],
-            "details": "Add POST / endpoint using @Body with CreateCronJobDto validation. Implement PUT /:id endpoint with @Param id validation and @Body UpdateCronJobDto. Use ValidationPipe for automatic DTO validation. Return created/updated job with 201/200 status codes. Handle validation errors with @BadRequestException. Add proper Swagger decorators @ApiBody, @ApiResponse for documentation including example payloads.",
-            "status": "done",
-            "testStrategy": ""
+            "details": "Create migration to update ExecutionLog table: convert id and jobId to VARCHAR(36), update status enum to proper MySQL ENUM type, change responseBody and errorMessage to MEDIUMTEXT for larger content storage, optimize datetime columns with proper MySQL DATETIME type. Add composite indexes for common query patterns like (jobId, executedAt) and (status, executedAt). Ensure foreign key relationships with CronJob table work correctly.",
+            "status": "pending",
+            "testStrategy": "Test ExecutionLog entity operations with new MySQL schema. Verify large response body storage works correctly. Test query performance with new composite indexes. Validate foreign key relationships and cascade operations."
           },
           {
             "id": 5,
-            "title": "Implement DELETE endpoint and error handling",
-            "description": "Create DELETE /api/jobs/:id endpoint with comprehensive error handling",
+            "title": "Add Migration Scripts and Validation Tools to Package.json",
+            "description": "Create npm scripts for migration management and add validation tools to verify schema integrity after migrations",
             "dependencies": [
-              "4.4"
+              "15.1",
+              "15.2",
+              "15.3",
+              "15.4"
             ],
-            "details": "Implement DELETE /:id endpoint with UUID validation. Return 204 No Content on successful deletion. Add global exception filter for handling database constraint errors, validation errors, and not found cases. Implement custom HTTP exceptions with descriptive messages. Add logging for all CRUD operations using @nestjs/common Logger. Include @ApiResponse decorators for all possible HTTP status codes in Swagger documentation.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Add Swagger documentation and validation middleware",
-            "description": "Complete API documentation and configure global validation middleware",
-            "dependencies": [
-              "4.5"
-            ],
-            "details": "Add comprehensive Swagger decorators: @ApiTags, @ApiOperation, @ApiResponse, @ApiBody, @ApiParam for all endpoints. Create example DTOs for documentation. Configure global ValidationPipe in main.ts with whitelist: true, forbidNonWhitelisted: true. Add class-transformer decorators for response serialization. Test all endpoints using Swagger UI interface. Add API versioning support and rate limiting configuration.",
-            "status": "done",
-            "testStrategy": ""
+            "details": "Add migration scripts to package.json: 'migration:run', 'migration:revert', 'migration:generate', 'migration:show'. Create validation script 'migration:validate' that checks schema integrity, verifies all indexes exist, validates foreign key constraints, and compares actual schema against entity definitions. Add 'migration:reset' for development cleanup. Include environment-specific migration scripts for different deployment stages. Create pre-migration backup script and post-migration validation workflow.",
+            "status": "pending",
+            "testStrategy": "Test all migration scripts execute correctly. Verify validation tool catches schema inconsistencies. Test rollback scenarios work properly. Validate migration scripts work across different environments (dev/prod)."
           }
         ]
       },
       {
-        "id": 5,
-        "title": "Implement HTTP Client Service",
-        "description": "Create service to execute HTTP requests with proper error handling, timeout, and response logging",
-        "details": "Create src/services/http-client.service.ts using @nestjs/axios HttpService. Implement executeRequest(job: CronJob) -> Promise<ExecutionResult> method. Support GET and POST requests with custom headers including Authorization. Set 30-second timeout, handle network errors, parse response body (limit to 10KB). Create ExecutionResult interface with status, responseCode, responseTime, responseBody, errorMessage. Log all requests to ExecutionLog entity with full response data. Handle different content-types (JSON, text, HTML). Implement request retry logic for network failures.",
-        "testStrategy": "Unit tests with mocked HTTP responses for success/error cases. Test timeout handling, large response truncation, different content types. Integration tests with real HTTP endpoints (httpbin.org) for GET/POST methods. Verify proper logging to database.",
-        "priority": "high",
-        "dependencies": [
-          2
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Set up HTTP client service with @nestjs/axios integration",
-            "description": "Create the base HTTP client service class and configure @nestjs/axios HttpService dependency",
-            "dependencies": [],
-            "details": "Create src/services/http-client.service.ts with @Injectable decorator. Import and inject HttpService from @nestjs/axios. Set up basic service structure with constructor dependency injection. Configure HttpModule in app.module.ts imports. Create ExecutionResult interface with status, responseCode, responseTime, responseBody, errorMessage fields.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement request execution logic with timeout and headers",
-            "description": "Create executeRequest method with proper HTTP method support, custom headers, and timeout configuration",
-            "dependencies": [
-              "5.1"
-            ],
-            "details": "Implement executeRequest(job: CronJob) -> Promise<ExecutionResult> method. Support GET and POST requests using HttpService. Add custom headers including Authorization from job configuration. Set 30-second timeout using axios timeout option. Extract URL, method, headers, and body from CronJob entity. Add request timing measurement for responseTime field.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Handle response processing and body size limiting",
-            "description": "Process HTTP responses with content-type handling and implement 10KB response body limit",
-            "dependencies": [
-              "5.2"
-            ],
-            "details": "Parse response body based on content-type (JSON, text, HTML). Implement 10KB response body size limit with truncation. Handle different response formats and ensure proper error handling for malformed JSON. Extract status code and response headers. Convert response data to string format for storage with size validation.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Integrate database logging with ExecutionLog entity",
-            "description": "Save all HTTP request results to ExecutionLog entity with complete response data",
-            "dependencies": [
-              "5.3"
-            ],
-            "details": "Inject ExecutionLog repository using @InjectRepository decorator. Create log entries with job ID, request details, response data, execution time, and status. Handle database save errors gracefully. Log both successful and failed requests with appropriate status values. Include full request/response cycle data for debugging purposes.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Implement retry logic for network failures",
-            "description": "Add automatic retry mechanism for failed HTTP requests with exponential backoff",
-            "dependencies": [
-              "5.4"
-            ],
-            "details": "Implement retry logic for network failures (timeout, connection errors, 5xx responses). Use exponential backoff strategy with maximum 3 retry attempts. Distinguish between retryable errors (network issues) and non-retryable errors (4xx client errors). Log each retry attempt with failure reason. Update ExecutionResult to include retry count and final failure reason if all retries exhausted.",
-            "status": "done",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 6,
-        "title": "Build Core Scheduler Service",
-        "description": "Implement scheduler service using @nestjs/schedule to manage job execution with both interval and cron scheduling",
-        "details": "Create src/services/scheduler.service.ts using @nestjs/schedule SchedulerRegistry. Implement dynamic job registration: addIntervalJob(job: CronJob), addCronJob(job: CronJob), removeJob(jobId: string). Use SchedulerRegistry.addInterval() for repeat schedules, SchedulerRegistry.addCronJob() for cron expressions. Load all active jobs on service initialization. Handle job updates by removing old and adding new schedules. Implement job execution wrapper that calls HttpClientService and logs results. Ensure jobs persist across application restarts. Add job status tracking (running, idle, error).",
-        "testStrategy": "Unit tests for job registration/removal, schedule parsing integration. Test that jobs execute at correct intervals using test timers. Verify job persistence across service restarts. Integration tests with database to ensure execution logs are created.",
-        "priority": "high",
-        "dependencies": [
-          3,
-          5
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Set up SchedulerRegistry service configuration",
-            "description": "Configure @nestjs/schedule module and initialize SchedulerRegistry in the scheduler service",
-            "dependencies": [],
-            "details": "Import ScheduleModule in app.module.ts, inject SchedulerRegistry into scheduler.service.ts, set up basic service structure with proper NestJS decorators and dependency injection",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement dynamic job registration methods",
-            "description": "Create methods for adding and removing interval and cron jobs dynamically",
-            "dependencies": [
-              "6.1"
-            ],
-            "details": "Implement addIntervalJob(), addCronJob(), and removeJob() methods using SchedulerRegistry.addInterval() and SchedulerRegistry.addCronJob(). Handle job ID management and validation",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Implement job persistence and startup loading",
-            "description": "Load all active jobs from database on service initialization and ensure persistence across restarts",
-            "dependencies": [
-              "6.2"
-            ],
-            "details": "Create onModuleInit() method to load active CronJob entities from database and register them with scheduler. Implement job restoration logic to maintain schedules across application restarts",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Create job execution wrapper with HTTP calls and logging",
-            "description": "Implement job execution wrapper that calls HttpClientService and logs execution results",
-            "dependencies": [
-              "6.2"
-            ],
-            "details": "Create executeJob() wrapper method that calls HttpClientService.executeRequest(), handles execution results, and creates ExecutionLog entries in database with proper error handling",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Implement job status tracking system",
-            "description": "Add job status tracking to monitor running, idle, and error states",
-            "dependencies": [
-              "6.4"
-            ],
-            "details": "Create job status enum (running, idle, error), implement status tracking in job execution wrapper, update job status in database, and provide methods to query job status",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Implement job lifecycle management",
-            "description": "Create methods to handle job updates, removal, and schedule modifications",
-            "dependencies": [
-              "6.3",
-              "6.5"
-            ],
-            "details": "Implement updateJob() method that removes old schedule and adds new one, handle job lifecycle events, ensure proper cleanup of resources, and maintain job registry consistency",
-            "status": "done",
-            "testStrategy": ""
-          }
-        ]
-      },
-      {
-        "id": 7,
-        "title": "Create Manual Job Execution Controller",
-        "description": "Implement endpoint for immediate job execution with manual trigger logging",
-        "details": "Create src/controllers/job-execution.controller.ts with POST /api/jobs/:id/trigger endpoint. Inject HttpClientService to execute job immediately bypassing scheduler. Mark execution log with triggeredManually: true flag. Return execution result in real-time to client. Add validation to ensure job exists and is active. Implement proper error handling for job not found, inactive jobs, execution failures. Add rate limiting to prevent abuse (max 1 trigger per job per 10 seconds). Use @ApiOperation for Swagger documentation with request/response examples.",
-        "testStrategy": "Unit tests for manual execution logic, validation, rate limiting. Integration tests with real job execution and database logging. Test error cases: non-existent job, inactive job, HTTP failures. Verify manual execution flag is set in logs.",
+        "id": 16,
+        "title": "Implement Tag API Endpoints and DTOs",
+        "description": "Create REST API endpoints for tag management with proper validation, filtering, and search capabilities",
+        "details": "1. Create TagController with endpoints: GET /tags, POST /tags, PUT /tags/:id, DELETE /tags/:id\n2. Create DTOs: CreateTagDto, UpdateTagDto, TagResponseDto\n3. Implement tag search endpoint: GET /tags/search?q=query\n4. Add tag attachment endpoints: POST /jobs/:id/tags, DELETE /jobs/:id/tags/:tagId\n5. Update job endpoints to support tag filtering: GET /jobs?tags=tag1,tag2&tagsMode=AND|OR\n6. Add proper validation, error handling, and Swagger documentation\n7. Implement permission checks and input sanitization",
+        "testStrategy": "API integration tests for all tag endpoints. Test tag filtering functionality with various combinations. Validate error handling for invalid inputs. Test API documentation accuracy.",
         "priority": "medium",
         "dependencies": [
-          5,
-          6
+          14
         ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Implement manual trigger endpoint",
-            "description": "Create POST /api/jobs/:id/trigger endpoint in job-execution.controller.ts with proper routing and Swagger documentation",
-            "dependencies": [],
-            "details": "Create src/controllers/job-execution.controller.ts with @Controller('api/jobs') decorator. Implement POST /:id/trigger endpoint with @Param('id') validation. Add @ApiOperation decorator with request/response examples for Swagger documentation. Set up proper HTTP status codes and response DTOs.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement job validation and execution logic",
-            "description": "Add job existence validation, active status check, and HTTP client integration for immediate execution",
-            "dependencies": [
-              "7.1"
-            ],
-            "details": "Inject CronJobService and HttpClientService into controller. Validate job exists and is active before execution. Call HttpClientService.executeRequest() to bypass scheduler and execute immediately. Mark execution log with triggeredManually: true flag. Return execution result in real-time to client with proper error handling for job not found and inactive jobs.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Add rate limiting and error handling",
-            "description": "Implement rate limiting protection and comprehensive error handling for manual job execution",
-            "dependencies": [
-              "7.2"
-            ],
-            "details": "Add rate limiting mechanism (max 1 trigger per job per 10 seconds) using in-memory store or Redis. Implement proper error handling for job not found (404), inactive jobs (400), execution failures (500). Add request logging and audit trail. Create custom exceptions with meaningful error messages and proper HTTP status codes.",
-            "status": "done",
-            "testStrategy": ""
-          }
-        ]
+        "status": "pending",
+        "subtasks": []
       },
       {
-        "id": 8,
-        "title": "Implement Execution Logs Controller and Cleanup Service",
-        "description": "Create API endpoints for viewing execution logs and automated cleanup service for 3-day retention",
-        "details": "Create src/controllers/logs.controller.ts with GET /api/jobs/:id/logs endpoint with pagination, filtering by status and date range. Implement src/services/log-cleanup.service.ts with @Cron decorator for daily cleanup at midnight. Delete logs older than 3 days using TypeORM delete query with date comparison. Add GET /api/logs/stats endpoint for success/failure counts, average response times. Implement log search functionality by job name, status, response content. Add response body truncation in API responses (show first 500 chars with expand option).",
-        "testStrategy": "Unit tests for log queries, pagination, filtering, cleanup logic. Test cleanup service removes only logs older than 3 days. Integration tests for log API endpoints with sample data. Verify performance with large log datasets.",
+        "id": 17,
+        "title": "Create Data Migration and Validation Tools",
+        "description": "Build tools for exporting SQLite data, transforming it, and importing to MySQL with comprehensive validation",
+        "details": "1. Create SQLite data export service with JSON output\n2. Implement data transformation pipeline for MySQL compatibility\n3. Create batch import service for MySQL with progress tracking\n4. Build data validation tools to verify integrity post-migration\n5. Implement rollback capability for failed migrations\n6. Add logging and progress reporting for migration process\n7. Create CLI commands for migration operations\n8. Handle UUID format conversion and datetime transformations",
+        "testStrategy": "Test data export produces valid JSON. Test data transformation handles all edge cases. Test import process with various data sizes. Verify validation tools catch data inconsistencies.",
+        "priority": "high",
+        "dependencies": [
+          15
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Update Frontend UI Components for Tag Management",
+        "description": "Implement Angular components for tag creation, management, filtering, and visual display throughout the application",
+        "details": "1. Create TagChipComponent for displaying tags with color coding\n2. Create TagInputComponent with autocomplete functionality\n3. Create TagFilterComponent for job list filtering (single/multiple selection)\n4. Create TagManagementComponent for admin tag operations\n5. Update JobFormComponent to include tag selection\n6. Update JobListComponent to display tags and support filtering\n7. Add tag color picker and visual indicators\n8. Implement responsive design for mobile compatibility",
+        "testStrategy": "Unit tests for all Angular components. E2E tests for tag workflows. Test autocomplete performance and accuracy. Test responsive design on various screen sizes.",
         "priority": "medium",
         "dependencies": [
-          2,
-          5
+          16
         ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create logs controller with job-specific log retrieval endpoint",
-            "description": "Implement GET /api/jobs/:id/logs endpoint with pagination, filtering by status and date range",
-            "dependencies": [],
-            "details": "Create src/controllers/logs.controller.ts with LogsController class. Implement GET /api/jobs/:id/logs endpoint that accepts query parameters for pagination (page, limit), status filtering (success, error), and date range filtering (startDate, endDate). Use TypeORM repository to query ExecutionLog entity with proper relations to CronJob. Return paginated response with total count, current page, and log entries.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement log statistics and search endpoints",
-            "description": "Create GET /api/logs/stats endpoint for metrics and search functionality by job name, status, and content",
-            "dependencies": [
-              "8.1"
-            ],
-            "details": "Add GET /api/logs/stats endpoint to return success/failure counts, average response times, and execution frequency metrics. Implement log search functionality with query parameters for job name, execution status, and response content search. Use TypeORM query builder for complex filtering and aggregation queries. Return structured statistics data and search results with proper typing.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Implement response body truncation and expansion",
-            "description": "Add response body truncation in API responses with option to view full content",
-            "dependencies": [
-              "8.1"
-            ],
-            "details": "Modify log retrieval endpoints to truncate response body to first 500 characters by default. Add query parameter 'expand=true' to return full response body when requested. Create utility function to handle truncation logic and add '...' indicator when content is truncated. Ensure truncation preserves valid JSON structure where possible.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Create automated log cleanup service",
-            "description": "Implement scheduled service to automatically delete logs older than 3 days",
-            "dependencies": [],
-            "details": "Create src/services/log-cleanup.service.ts with @Cron('0 0 * * *') decorator for daily execution at midnight. Implement cleanup logic using TypeORM delete query with date comparison to remove ExecutionLog entries older than 3 days. Add proper error handling and logging for cleanup operations. Include configuration option for retention period.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Add DTOs and validation for log endpoints",
-            "description": "Create data transfer objects and validation for all log-related API endpoints",
-            "dependencies": [
-              "8.1",
-              "8.2"
-            ],
-            "details": "Create DTOs for log query parameters, pagination responses, and statistics responses. Implement validation decorators for date ranges, pagination limits, and search parameters. Add Swagger decorations for API documentation. Create response DTOs that include proper typing for log entries, statistics data, and paginated responses with metadata.",
-            "status": "done",
-            "testStrategy": ""
-          }
-        ]
+        "status": "pending",
+        "subtasks": []
       },
       {
-        "id": 9,
-        "title": "Build Angular Frontend Application",
-        "description": "Create Angular SPA with job management interface, execution monitoring, and responsive design",
-        "details": "Generate Angular 17+ application in frontend/ directory. Create components: JobListComponent (displays all jobs with status indicators), JobFormComponent (create/edit jobs with schedule type toggle), JobDetailsComponent (view job with execution history), LogViewerComponent (expandable response bodies). Implement services: JobService (HTTP client for API calls), ScheduleValidatorService (client-side validation). Use Angular Material or Bootstrap for UI components. Implement reactive forms with validation for job creation/editing. Add real-time status updates using polling or WebSocket. Make responsive design for mobile viewing. Build as static files to serve from NestJS.",
-        "testStrategy": "Unit tests for components and services using Angular testing utilities. End-to-end tests using Protractor or Cypress for complete user flows. Test form validation, API integration, responsive design on different screen sizes.",
-        "priority": "high",
+        "id": 19,
+        "title": "Implement Comprehensive Test Suite for Migration and Tag System",
+        "description": "Create extensive test coverage for all migration processes, tag functionality, and database compatibility",
+        "details": "1. Create unit tests for all new services and repositories\n2. Build integration tests for MySQL database operations\n3. Create E2E tests for complete tag workflows\n4. Implement performance benchmarks for tag filtering with large datasets\n5. Test concurrent operation handling with MySQL\n6. Create load tests for migration process with various data sizes\n7. Test data integrity validation tools\n8. Add tests for edge cases and error scenarios\n9. Achieve 90% code coverage requirement",
+        "testStrategy": "Automated test execution in CI/CD pipeline. Performance benchmarking reports. Code coverage analysis. Load testing results validation.",
+        "priority": "medium",
         "dependencies": [
-          4,
-          7,
-          8
+          17,
+          18
         ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Initialize Angular project and routing setup",
-            "description": "Create Angular 17+ project in frontend/ directory with routing configuration",
-            "dependencies": [],
-            "details": "Use Angular CLI to generate new project with routing enabled. Configure app-routing.module.ts with routes for job list, job form, and job details. Set up base HTML layout with navigation and router outlet. Install Angular Material or Bootstrap for UI framework.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Create JobListComponent with status indicators",
-            "description": "Build main job listing component displaying all jobs with visual status indicators",
-            "dependencies": [
-              "9.1"
-            ],
-            "details": "Generate JobListComponent with table/card layout showing job name, schedule, next run, and status. Implement color-coded status indicators (running, success, failed, disabled). Add sorting and filtering capabilities. Include action buttons for edit, delete, and manual trigger.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Implement JobFormComponent with reactive forms",
-            "description": "Create job creation and editing form with validation and schedule type toggle",
-            "dependencies": [
-              "9.1"
-            ],
-            "details": "Build reactive form with FormBuilder for job creation/editing. Include fields: name, URL, HTTP method, headers, schedule type toggle (cron/repeat), schedule input with dynamic validation. Implement client-side validation matching backend DTOs. Add schedule format hints and examples.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Build JobDetailsComponent with execution history",
-            "description": "Create detailed job view showing configuration and execution history",
-            "dependencies": [
-              "9.1"
-            ],
-            "details": "Generate component displaying full job details including configuration, next execution time, and paginated execution history table. Show execution timestamps, status, response codes, and duration. Include expandable rows for response body preview.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Create LogViewerComponent for response bodies",
-            "description": "Build expandable log viewer component for job execution response details",
-            "dependencies": [
-              "9.4"
-            ],
-            "details": "Create reusable component for displaying HTTP response bodies with syntax highlighting for JSON/XML. Implement expandable/collapsible interface, copy-to-clipboard functionality, and proper formatting for different content types. Handle large responses with truncation and full view options.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Implement HTTP services for API integration",
-            "description": "Create Angular services for job management and schedule validation",
-            "dependencies": [
-              "9.1"
-            ],
-            "details": "Build JobService with HTTP client methods for CRUD operations, manual job triggering, and fetching execution logs. Create ScheduleValidatorService for client-side schedule format validation. Implement error handling, loading states, and response typing. Add polling service for real-time status updates.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 7,
-            "title": "Implement responsive design and mobile optimization",
-            "description": "Make application responsive for mobile devices with optimized layouts",
-            "dependencies": [
-              "9.2",
-              "9.3",
-              "9.4"
-            ],
-            "details": "Implement responsive design using CSS Grid/Flexbox and Angular Flex Layout. Create mobile-friendly navigation with hamburger menu. Optimize table layouts for small screens with horizontal scrolling or card layouts. Ensure touch-friendly buttons and proper viewport configuration.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 8,
-            "title": "Configure build integration with NestJS serving",
-            "description": "Set up Angular build process to generate static files served by NestJS",
-            "dependencies": [
-              "9.6",
-              "9.7"
-            ],
-            "details": "Configure Angular build output to NestJS public/static directory. Set up NestJS to serve Angular static files and handle client-side routing with fallback. Configure build scripts in package.json for development and production. Set up environment-specific API base URLs and build optimization.",
-            "status": "done",
-            "testStrategy": ""
-          }
-        ]
+        "status": "pending",
+        "subtasks": []
       },
       {
-        "id": 10,
-        "title": "Configure Docker Container and Production Build",
-        "description": "Create multi-stage Dockerfile with production-ready configuration and deployment setup",
-        "details": "Create Dockerfile with multi-stage build: Stage 1 - Node.js build environment, install dependencies, build Angular frontend and NestJS backend. Stage 2 - Alpine Linux runtime, copy built artifacts, expose port 4000. Configure NestJS to serve Angular static files from dist/. Set up environment variables: PORT, DB_PATH, NODE_ENV. Create docker-compose.yml example with volume mounts for data persistence. Add .dockerignore file. Configure production logging, health checks using @nestjs/terminus. Set up graceful shutdown handling. Add README.md with deployment instructions and API documentation links.",
-        "testStrategy": "Build Docker image and test container startup, verify all endpoints work in container. Test volume persistence by restarting container. Load testing with multiple concurrent jobs. Verify health checks and graceful shutdown work correctly.",
-        "priority": "high",
+        "id": 20,
+        "title": "Production Deployment Strategy and Documentation",
+        "description": "Create comprehensive deployment procedures, monitoring setup, and complete documentation for the migration and tag system",
+        "details": "1. Create step-by-step production migration guide\n2. Implement database monitoring and health checks\n3. Create rollback procedures and emergency protocols\n4. Document all new API endpoints and tag system features\n5. Create user guide for tag management functionality\n6. Set up logging and alerting for migration process\n7. Create deployment validation checklist\n8. Document performance optimization configurations\n9. Create troubleshooting guide for common issues",
+        "testStrategy": "Test deployment procedures in staging environment. Validate monitoring and alerting systems. Test rollback procedures under various failure scenarios. Review documentation completeness and accuracy.",
+        "priority": "medium",
         "dependencies": [
-          1,
-          9
+          19
         ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create multi-stage Dockerfile with build and runtime stages",
-            "description": "Implement Dockerfile with Stage 1 (Node.js build environment) and Stage 2 (Alpine Linux runtime)",
-            "dependencies": [],
-            "details": "Stage 1: Use node:18-alpine as build stage, set WORKDIR, copy package files, run npm install, copy source code, build Angular frontend with ng build --prod, build NestJS backend with npm run build. Stage 2: Use node:18-alpine as runtime, copy built artifacts from stage 1, install only production dependencies, set proper user permissions, expose port 4000.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Configure production build settings and static file serving",
-            "description": "Set up NestJS to serve Angular static files and optimize production builds",
-            "dependencies": [
-              "10.1"
-            ],
-            "details": "Configure NestJS main.ts to serve static files from dist/ directory using express.static middleware. Update Angular build configuration for production optimization. Configure NestJS production settings including CORS, compression, and security headers. Set up proper asset paths and routing fallback for SPA.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Set up environment variables and Docker volume configuration",
-            "description": "Configure environment variables, docker-compose.yml, and .dockerignore files",
-            "dependencies": [
-              "10.1"
-            ],
-            "details": "Create .env.example with PORT, DB_PATH, NODE_ENV variables. Create docker-compose.yml with volume mounts for data persistence, environment variable configuration, and port mapping. Add .dockerignore file excluding node_modules, .git, dist, logs, and development files. Configure volume mount for SQLite database file persistence.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Implement health checks and graceful shutdown handling",
-            "description": "Add @nestjs/terminus health checks and proper application shutdown procedures",
-            "dependencies": [
-              "10.2"
-            ],
-            "details": "Install and configure @nestjs/terminus for health checks. Create /health endpoint checking database connection, disk space, and memory usage. Implement graceful shutdown handling with SIGTERM/SIGINT listeners. Add proper cleanup for database connections, scheduled tasks, and ongoing HTTP requests. Configure Docker health check in Dockerfile.",
-            "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Create deployment documentation and production logging configuration",
-            "description": "Add README.md deployment instructions and configure production logging",
-            "dependencies": [
-              "10.3",
-              "10.4"
-            ],
-            "details": "Create comprehensive README.md with Docker build instructions, environment variable documentation, deployment examples, and API documentation links. Configure production logging with proper log levels, structured JSON output, log rotation, and error handling. Add monitoring and troubleshooting guides for common deployment scenarios.",
-            "status": "done",
-            "testStrategy": ""
-          }
-        ]
+        "status": "pending",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-08-27T05:24:49.605Z",
-      "updated": "2025-08-27T10:15:44.553Z",
+      "updated": "2025-09-03T05:59:06.686Z",
       "description": "Tasks for master context"
     }
   }
