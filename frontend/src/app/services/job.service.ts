@@ -121,4 +121,8 @@ export class JobService {
   clearJobLogs(id: string): Observable<{ message: string; deletedCount: number }> {
     return this.http.delete<{ message: string; deletedCount: number }>(`${this.apiUrl}/jobs/${id}/logs`);
   }
+
+  refreshScheduler(): Observable<{ success: boolean; message: string; jobsLoaded: number }> {
+    return this.http.post<{ success: boolean; message: string; jobsLoaded: number }>(`${this.apiUrl}/jobs/refresh-scheduler`, {});
+  }
 }
