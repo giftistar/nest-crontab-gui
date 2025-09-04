@@ -25,13 +25,17 @@ import { CronJobService } from '../services/cronjob.service';
 import { CreateCronJobDto } from '../dto/create-cronjob.dto';
 import { UpdateCronJobDto } from '../dto/update-cronjob.dto';
 import { CronJob } from '../entities/cronjob.entity';
+import { SchedulerService } from '../services/scheduler.service';
 
 @ApiTags('CronJobs')
 @Controller('api/jobs')
 export class CronJobController {
   private readonly logger = new Logger(CronJobController.name);
 
-  constructor(private readonly cronJobService: CronJobService) {}
+  constructor(
+    private readonly cronJobService: CronJobService,
+    private readonly schedulerService: SchedulerService,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -254,5 +258,20 @@ export class CronJobController {
   ): Promise<CronJob> {
     this.logger.log(`PUT /api/jobs/${id}/toggle`);
     return this.cronJobService.toggleStatus(id);
+  }
+
+  @Post('refresh-scheduler')
+  @ApiOperation({
+    summary: 'Refresh the scheduler',
+    description: 'Reload all jobs from the database to sync scheduler with database changes',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Scheduler refreshed successfully',
+  })
+  @HttpCode(HttpStatus.OK)
+  async refreshScheduler(): Promise<{ success: boolean; message: string; jobsLoaded: number }> {
+    this.logger.log('POST /api/jobs/refresh-scheduler');
+    return this.schedulerService.refreshScheduler();
   }
 }
