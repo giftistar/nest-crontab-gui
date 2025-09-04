@@ -1,0 +1,184 @@
+<div class="data-manager-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Data Management</mat-card-title>
+      <mat-card-subtitle>Export and import your cron job data</mat-card-subtitle>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <!-- Export Section -->
+      <mat-expansion-panel expanded>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>file_download</mat-icon>
+            Export Data
+          </mat-panel-title>
+          <mat-panel-description>
+            Download your data as JSON
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+        
+        <div class="panel-content">
+          <p class="description">
+            Export all your cron jobs, tags, and execution logs to a JSON file. 
+            This can be used for backup or migration purposes.
+          </p>
+          
+          <button mat-raised-button 
+                  color="primary" 
+                  (click)="exportDatabase()"
+                  [disabled]="exporting">
+            <mat-icon>download</mat-icon>
+            {{ exporting ? 'Exporting...' : 'Export Database' }}
+          </button>
+          
+          <mat-spinner *ngIf="exporting" diameter="30"></mat-spinner>
+          
+          <div class="export-info" *ngIf="exportData">
+            <h4>Last Export:</h4>
+            <mat-list>
+              <mat-list-item>
+                <span matListItemTitle>Exported At:</span>
+                <span matListItemLine>{{ exportData.metadata.exportedAt | date:'medium' }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span matListItemTitle>Cron Jobs:</span>
+                <span matListItemLine>{{ exportData.metadata.counts.cronJobs }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span matListItemTitle>Tags:</span>
+                <span matListItemLine>{{ exportData.metadata.counts.tags }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span matListItemTitle>Execution Logs:</span>
+                <span matListItemLine>{{ exportData.metadata.counts.executionLogs }}</span>
+              </mat-list-item>
+            </mat-list>
+          </div>
+        </div>
+      </mat-expansion-panel>
+      
+      <mat-divider></mat-divider>
+      
+      <!-- Import Section -->
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>file_upload</mat-icon>
+            Import Data
+          </mat-panel-title>
+          <mat-panel-description>
+            Upload a JSON file to import data
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+        
+        <div class="panel-content">
+          <p class="description">
+            Import data from a previously exported JSON file. 
+            You can choose to merge with existing data or replace it entirely.
+          </p>
+          
+          <!-- File Upload -->
+          <div class="file-upload-section">
+            <input type="file" 
+                   id="file-input"
+                   accept="application/json,.json" 
+                   (change)="onFileSelected($event)"
+                   #fileInput
+                   style="display: none;">
+            
+            <button mat-raised-button 
+                    color="accent" 
+                    (click)="fileInput.click()"
+                    [disabled]="importing">
+              <mat-icon>folder_open</mat-icon>
+              Choose File
+            </button>
+            
+            <span class="file-name" *ngIf="importFile">
+              {{ importFile.name }}
+            </span>
+          </div>
+          
+          <!-- Import Options -->
+          <div class="import-options" *ngIf="importFile">
+            <mat-checkbox [(ngModel)]="clearExisting">
+              Clear existing data before import
+            </mat-checkbox>
+            <p class="warning" *ngIf="clearExisting">
+              <mat-icon>warning</mat-icon>
+              This will delete all existing data!
+            </p>
+          </div>
+          
+          <!-- Validation Errors -->
+          <div class="validation-errors" *ngIf="validationErrors.length > 0">
+            <h4>Validation Errors:</h4>
+            <mat-list>
+              <mat-list-item *ngFor="let error of validationErrors">
+                <mat-icon matListItemIcon color="warn">error</mat-icon>
+                <span matListItemTitle>{{ error }}</span>
+              </mat-list-item>
+            </mat-list>
+          </div>
+          
+          <!-- Import Result -->
+          <div class="import-result" *ngIf="importResult">
+            <h4>Import Result:</h4>
+            <mat-list>
+              <mat-list-item>
+                <mat-icon matListItemIcon [color]="importResult.success ? 'primary' : 'warn'">
+                  {{ importResult.success ? 'check_circle' : 'error' }}
+                </mat-icon>
+                <span matListItemTitle>Status:</span>
+                <span matListItemLine>{{ importResult.success ? 'Success' : 'Completed with errors' }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span matListItemTitle>Imported Tags:</span>
+                <span matListItemLine>{{ importResult.imported.tags }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span matListItemTitle>Imported Jobs:</span>
+                <span matListItemLine>{{ importResult.imported.cronJobs }}</span>
+              </mat-list-item>
+              <mat-list-item>
+                <span matListItemTitle>Imported Logs:</span>
+                <span matListItemLine>{{ importResult.imported.executionLogs }}</span>
+              </mat-list-item>
+            </mat-list>
+            
+            <div class="import-errors" *ngIf="importResult.errors && importResult.errors.length > 0">
+              <h5>Errors:</h5>
+              <mat-list>
+                <mat-list-item *ngFor="let error of importResult.errors">
+                  <mat-icon matListItemIcon color="warn">warning</mat-icon>
+                  <span matListItemTitle>{{ error.entity }}</span>
+                  <span matListItemLine>{{ error.error }}</span>
+                </mat-list-item>
+              </mat-list>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="action-buttons" *ngIf="importFile">
+            <button mat-raised-button 
+                    color="primary" 
+                    (click)="importDatabase()"
+                    [disabled]="importing || validating || validationErrors.length > 0">
+              <mat-icon>upload</mat-icon>
+              {{ importing ? 'Importing...' : 'Import Data' }}
+            </button>
+            
+            <button mat-button 
+                    (click)="resetImport()"
+                    [disabled]="importing">
+              Cancel
+            </button>
+            
+            <mat-spinner *ngIf="importing || validating" diameter="30"></mat-spinner>
+          </div>
+        </div>
+      </mat-expansion-panel>
+    </mat-card-content>
+  </mat-card>
+</div>

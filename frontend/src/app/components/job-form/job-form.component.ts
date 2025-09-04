@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -12,11 +12,17 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { catchError, of, switchMap } from 'rxjs';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { catchError, of } from 'rxjs';
 
 import { JobService } from '../../services/job.service';
 import { ScheduleValidatorService } from '../../services/schedule-validator.service';
+import { TagService } from '../../services/tag.service';
 import { CronJob, CreateCronJobDto, UpdateCronJobDto, HttpMethod, ScheduleType, ExecutionMode } from '../../models/cronjob.model';
+import { Tag } from '../../models/tag.model';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { TagCreateDialogComponent } from '../tag-create-dialog/tag-create-dialog.component';
 
 @Component({
   selector: 'app-job-form',
@@ -24,6 +30,7 @@ import { CronJob, CreateCronJobDto, UpdateCronJobDto, HttpMethod, ScheduleType, 
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    RouterLink,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
@@ -33,7 +40,10 @@ import { CronJob, CreateCronJobDto, UpdateCronJobDto, HttpMethod, ScheduleType, 
     MatToolbarModule,
     MatSlideToggleModule,
     MatSnackBarModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatChipsModule,
+    MatAutocompleteModule,
+    MatDialogModule
   ],
   templateUrl: './job-form.component.html',
   styleUrl: './job-form.component.scss'
@@ -48,19 +58,25 @@ export class JobFormComponent implements OnInit {
   httpMethods = Object.values(HttpMethod);
   scheduleTypes = Object.values(ScheduleType);
   executionModes = Object.values(ExecutionMode);
+  
+  availableTags: Tag[] = [];
+  selectedTags: Tag[] = [];
 
   constructor(
     private fb: FormBuilder,
     private jobService: JobService,
     private scheduleValidator: ScheduleValidatorService,
+    private tagService: TagService,
     private router: Router,
     private route: ActivatedRoute,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {
     this.jobForm = this.createForm();
   }
 
   ngOnInit(): void {
+    this.loadTags();
     this.route.params.subscribe(params => {
       if (params['id']) {
         this.isEditMode = true;
@@ -99,7 +115,8 @@ export class JobFormComponent implements OnInit {
       isActive: [true],
       requestTimeout: ['', [Validators.min(1), Validators.max(300)]],
       executionMode: [ExecutionMode.SEQUENTIAL, Validators.required],
-      maxConcurrent: [1, [Validators.required, Validators.min(1), Validators.max(100)]]
+      maxConcurrent: [1, [Validators.required, Validators.min(1), Validators.max(100)]],
+      tagIds: [[], []]
     });
   }
 
@@ -225,7 +242,81 @@ export class JobFormComponent implements OnInit {
       schedule: job.schedule,
       scheduleType: job.scheduleType,
       isActive: job.isActive,
-      requestTimeout: job.requestTimeout ? job.requestTimeout / 1000 : '' // Convert from ms to seconds
+      requestTimeout: job.requestTimeout ? job.requestTimeout / 1000 : '', // Convert from ms to seconds
+      tagIds: job.tags ? job.tags.map(tag => tag.id) : []
+    });
+    
+    // Update selected tags
+    this.selectedTags = job.tags || [];
+  }
+  
+  private loadTags(): void {
+    this.tagService.getTags().subscribe({
+      next: (tags) => {
+        this.availableTags = tags;
+      },
+      error: (error) => {
+        console.error('Error loading tags:', error);
+      }
+    });
+  }
+  
+  addTag(tagId: string): void {
+    const tag = this.availableTags.find(t => t.id === tagId);
+    if (tag && !this.selectedTags.find(t => t.id === tagId)) {
+      this.selectedTags.push(tag);
+      const currentTagIds = this.jobForm.get('tagIds')?.value || [];
+      this.jobForm.patchValue({
+        tagIds: [...currentTagIds, tagId]
+      });
+    }
+  }
+  
+  removeTag(tagId: string): void {
+    this.selectedTags = this.selectedTags.filter(t => t.id !== tagId);
+    const currentTagIds = this.jobForm.get('tagIds')?.value || [];
+    this.jobForm.patchValue({
+      tagIds: currentTagIds.filter((id: string) => id !== tagId)
+    });
+  }
+  
+  getAvailableTagsFiltered(): Tag[] {
+    return this.availableTags.filter(tag => 
+      !this.selectedTags.find(selected => selected.id === tag.id)
+    );
+  }
+
+  openCreateTagDialog(): void {
+    const dialogRef = this.dialog.open(TagCreateDialogComponent, {
+      width: '400px',
+      data: {}
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        // Create the new tag
+        this.tagService.createTag(result).subscribe({
+          next: (newTag) => {
+            // Add the new tag to available tags
+            this.availableTags.push(newTag);
+            // Automatically add it to selected tags
+            this.addTag(newTag.id);
+            this.snackBar.open('Tag created successfully', 'Close', {
+              duration: 2000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top'
+            });
+          },
+          error: (error) => {
+            console.error('Error creating tag:', error);
+            this.snackBar.open('Error creating tag', 'Close', {
+              duration: 3000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top'
+            });
+          }
+        });
+      }
     });
   }
 

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger, Optional, I
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CronJob } from '../entities/cronjob.entity';
+import { Tag } from '../entities/tag.entity';
 import { CreateCronJobDto } from '../dto/create-cronjob.dto';
 import { UpdateCronJobDto } from '../dto/update-cronjob.dto';
 import { ScheduleParserService } from './schedule-parser.service';
@@ -14,6 +15,8 @@ export class CronJobService {
   constructor(
     @InjectRepository(CronJob)
     private readonly cronJobRepository: Repository<CronJob>,
+    @InjectRepository(Tag)
+    private readonly tagRepository: Repository<Tag>,
     private readonly scheduleParser: ScheduleParserService,
     @Optional()
     @Inject(forwardRef(() => SchedulerService))
@@ -21,15 +24,23 @@ export class CronJobService {
   ) {}
 
   /**
-   * Find all cron jobs
+   * Find all cron jobs with optional tag filter
    */
-  async findAll(): Promise<CronJob[]> {
+  async findAll(tagIds?: string[]): Promise<CronJob[]> {
     try {
-      return await this.cronJobRepository.find({
-        order: {
-          createdAt: 'DESC',
-        },
-      });
+      const queryBuilder = this.cronJobRepository
+        .createQueryBuilder('cronjob')
+        .leftJoinAndSelect('cronjob.tags', 'tag');
+
+      if (tagIds && tagIds.length > 0) {
+        queryBuilder
+          .innerJoin('cronjob.tags', 'filterTag')
+          .where('filterTag.id IN (:...tagIds)', { tagIds });
+      }
+
+      return await queryBuilder
+        .orderBy('cronjob.createdAt', 'DESC')
+        .getMany();
     } catch (error) {
       this.logger.error(`Failed to fetch cron jobs: ${error.message}`, error.stack);
       throw error;
@@ -86,11 +97,23 @@ export class CronJobService {
         }
       }
 
+      // Extract tagIds from DTO
+      const { tagIds, ...jobData } = createCronJobDto;
+      
+      // Create the job entity
       const cronJob = this.cronJobRepository.create({
-        ...createCronJobDto,
+        ...jobData,
         isActive: createCronJobDto.isActive ?? true,
       });
-
+      
+      // Handle tags if provided
+      if (tagIds && tagIds.length > 0) {
+        const tags = await this.tagRepository.find({
+          where: tagIds.map(id => ({ id }))
+        });
+        cronJob.tags = tags;
+      }
+      
       const savedJob = await this.cronJobRepository.save(cronJob);
       
       this.logger.log(`Created cron job: ${savedJob.id} - ${savedJob.name}`);
@@ -148,8 +171,27 @@ export class CronJobService {
         }
       }
 
-      // Update the job
-      await this.cronJobRepository.update(id, updateCronJobDto);
+      // Extract tagIds from DTO
+      const { tagIds, ...updateData } = updateCronJobDto;
+      
+      // Update the job basic data
+      await this.cronJobRepository.update(id, updateData);
+      
+      // Handle tags if provided
+      if (tagIds !== undefined) {
+        const job = await this.cronJobRepository.findOne({ where: { id }, relations: ['tags'] });
+        if (job) {
+          if (tagIds.length > 0) {
+            const tags = await this.tagRepository.find({
+              where: tagIds.map(id => ({ id }))
+            });
+            job.tags = tags;
+          } else {
+            job.tags = [];
+          }
+          await this.cronJobRepository.save(job);
+        }
+      }
 
       // Fetch and return the updated job
       const updatedJob = await this.findOne(id);

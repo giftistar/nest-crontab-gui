@@ -336,7 +336,6 @@ docker run -d \
   imports: [
     TypeOrmModule.forRoot({...}),
     ScheduleModule.forRoot(),
-    ConfigModule.forRoot(),
     HttpModule
   ],
   controllers: [CronJobController, LogsController],

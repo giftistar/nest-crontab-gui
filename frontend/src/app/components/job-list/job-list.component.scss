@@ -174,3 +174,45 @@
     height: 36px;
   }
 }
+
+// Tags styles
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  
+  .tag-chip {
+    font-size: 12px;
+    padding: 2px 8px !important;
+    height: 20px !important;
+    line-height: 20px !important;
+  }
+}
+
+.no-tags {
+  color: rgba(0, 0, 0, 0.38);
+  font-size: 14px;
+}
+
+// Filter section styles
+.filter-section {
+  padding: 20px;
+  padding-bottom: 0;
+  
+  mat-card {
+    margin-bottom: 20px;
+  }
+  
+  .filter-field {
+    width: 300px;
+    margin-right: 16px;
+  }
+  
+  .tag-chip-option {
+    font-size: 12px;
+    padding: 2px 8px !important;
+    height: 20px !important;
+    line-height: 20px !important;
+    margin: 2px 0;
+  }
+}

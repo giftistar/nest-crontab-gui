@@ -39,6 +39,18 @@ export class AppComponent {
       label: 'Logs', 
       icon: 'history',
       description: 'View execution history'
+    },
+    {
+      path: '/tags',
+      label: 'Tags',
+      icon: 'label',
+      description: 'Manage job tags'
+    },
+    {
+      path: '/data',
+      label: 'Data',
+      icon: 'backup',
+      description: 'Import/Export data'
     }
   ];
 

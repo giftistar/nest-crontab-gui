@@ -6,8 +6,11 @@ import {
   UpdateDateColumn,
   Index,
   OneToMany,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { ExecutionLog } from './execution-log.entity';
+import { Tag } from './tag.entity';
 
 export enum HttpMethod {
   GET = 'GET',
@@ -39,7 +42,7 @@ export class CronJob {
   url: string;
 
   @Column({
-    type: 'text',
+    type: process.env.DB_TYPE === 'mysql' ? 'enum' : 'text',
     enum: HttpMethod,
     default: HttpMethod.GET,
   })
@@ -55,7 +58,7 @@ export class CronJob {
   schedule: string;
 
   @Column({
-    type: 'text',
+    type: process.env.DB_TYPE === 'mysql' ? 'enum' : 'text',
     enum: ScheduleType,
     default: ScheduleType.CRON,
   })
@@ -83,7 +86,7 @@ export class CronJob {
   requestTimeout?: number; // Timeout in milliseconds
 
   @Column({
-    type: 'text',
+    type: process.env.DB_TYPE === 'mysql' ? 'enum' : 'text',
     enum: ExecutionMode,
     default: ExecutionMode.SEQUENTIAL,
   })
@@ -100,4 +103,21 @@ export class CronJob {
     onDelete: 'CASCADE',
   })
   executionLogs: ExecutionLog[];
+
+  @ManyToMany(() => Tag, (tag) => tag.cronJobs, {
+    cascade: ['insert', 'update'],
+    eager: true,
+  })
+  @JoinTable({
+    name: 'cronjob_tags',
+    joinColumn: {
+      name: 'cronjob_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'tag_id',
+      referencedColumnName: 'id',
+    },
+  })
+  tags: Tag[];
 }

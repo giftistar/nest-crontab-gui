@@ -31,6 +31,45 @@
               <mat-label>Description</mat-label>
               <textarea matInput formControlName="description" rows="2" placeholder="Optional description"></textarea>
             </mat-form-field>
+
+            <!-- Tags Selection -->
+            <div class="tags-section">
+              <div class="tags-header">
+                <label class="section-label">Tags</label>
+                <button mat-button color="primary" type="button" (click)="openCreateTagDialog()">
+                  <mat-icon>add</mat-icon>
+                  Create New Tag
+                </button>
+              </div>
+              <div class="selected-tags" *ngIf="selectedTags.length > 0">
+                <mat-chip-listbox aria-label="Selected tags">
+                  <mat-chip-option *ngFor="let tag of selectedTags" 
+                                    [style.background-color]="tag.color"
+                                    [style.color]="'white'"
+                                    [removable]="true"
+                                    (removed)="removeTag(tag.id)">
+                    {{ tag.name }}
+                    <mat-icon matChipRemove>cancel</mat-icon>
+                  </mat-chip-option>
+                </mat-chip-listbox>
+              </div>
+              
+              <mat-form-field appearance="outline" class="full-width" *ngIf="getAvailableTagsFiltered().length > 0">
+                <mat-label>Add Tags</mat-label>
+                <mat-select (selectionChange)="addTag($event.value)">
+                  <mat-option *ngFor="let tag of getAvailableTagsFiltered()" [value]="tag.id">
+                    <span class="tag-option">
+                      <span class="tag-color" [style.background-color]="tag.color"></span>
+                      {{ tag.name }}
+                    </span>
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              
+              <p class="no-tags-message" *ngIf="availableTags.length === 0 && selectedTags.length === 0">
+                No tags available. Click "Create New Tag" to add your first tag.
+              </p>
+            </div>
           </div>
 
           <!-- HTTP Request Section -->

@@ -14,8 +14,14 @@ export class JobService {
   constructor(private http: HttpClient) {}
 
   // Job CRUD operations
-  getAllJobs(): Observable<CronJob[]> {
-    return this.http.get<CronJob[]>(`${this.apiUrl}/jobs`);
+  getAllJobs(tagIds?: string[]): Observable<CronJob[]> {
+    let params = new HttpParams();
+    
+    if (tagIds && tagIds.length > 0) {
+      params = params.set('tagIds', tagIds.join(','));
+    }
+    
+    return this.http.get<CronJob[]>(`${this.apiUrl}/jobs`, { params });
   }
 
   getJob(id: string): Observable<CronJob> {

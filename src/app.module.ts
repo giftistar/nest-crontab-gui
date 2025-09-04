@@ -2,22 +2,22 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CronJob } from './entities/cronjob.entity';
-import { ExecutionLog } from './entities/execution-log.entity';
 import { ServicesModule } from './services/services.module';
 import { ControllersModule } from './controllers/controllers.module';
-import * as path from 'path';
+import { DatabaseConfigService } from './services/database-config.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: process.env.DB_PATH || path.join(process.cwd(), 'data', 'database.sqlite'),
-      entities: [CronJob, ExecutionLog],
-      synchronize: true, // Enable for initial setup, disable in real production
-      logging: process.env.NODE_ENV === 'development',
+    TypeOrmModule.forRootAsync({
+      imports: [],
+      useFactory: (databaseConfigService: DatabaseConfigService) => {
+        return databaseConfigService.createTypeOrmOptions();
+      },
+      inject: [DatabaseConfigService],
+      extraProviders: [DatabaseConfigService],
     }),
     ScheduleModule.forRoot(),
     HttpModule.register({

@@ -107,6 +107,21 @@
                   <span class="label">Request Timeout:</span>
                   <span class="value">{{ job.requestTimeout / 1000 }} seconds</span>
                 </div>
+                
+                <div class="info-item full-width">
+                  <span class="label">Tags:</span>
+                  <div class="tags-display">
+                    <mat-chip *ngFor="let tag of job.tags" 
+                              [style.background-color]="tag.color"
+                              [style.color]="'white'"
+                              class="tag-chip">
+                      {{ tag.name }}
+                    </mat-chip>
+                    <span class="no-tags" *ngIf="!job.tags || job.tags.length === 0">
+                      No tags assigned
+                    </span>
+                  </div>
+                </div>
               </div>
             </mat-card-content>
 

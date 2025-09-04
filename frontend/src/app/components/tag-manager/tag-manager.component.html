@@ -1,0 +1,111 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Tag Management</mat-card-title>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="openForm()" *ngIf="!showForm">
+        <mat-icon>add</mat-icon>
+        New Tag
+      </button>
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    <!-- Tag Form -->
+    <div class="tag-form" *ngIf="showForm">
+      <h3>{{ editingTag ? 'Edit Tag' : 'Create New Tag' }}</h3>
+      <form [formGroup]="tagForm" (ngSubmit)="saveTag()">
+        <mat-form-field appearance="fill" class="full-width">
+          <mat-label>Tag Name</mat-label>
+          <input matInput formControlName="name" placeholder="Enter tag name">
+          <mat-error *ngIf="tagForm.get('name')?.hasError('required')">
+            Tag name is required
+          </mat-error>
+          <mat-error *ngIf="tagForm.get('name')?.hasError('minlength')">
+            Tag name must be at least 2 characters
+          </mat-error>
+          <mat-error *ngIf="tagForm.get('name')?.hasError('maxlength')">
+            Tag name cannot exceed 50 characters
+          </mat-error>
+        </mat-form-field>
+
+        <div class="color-selection">
+          <label>Select Color:</label>
+          <div class="color-palette">
+            <button type="button" 
+                    *ngFor="let color of predefinedColors"
+                    class="color-button"
+                    [style.background-color]="color"
+                    [class.selected]="tagForm.get('color')?.value === color"
+                    (click)="setColor(color)">
+            </button>
+          </div>
+          <div class="current-color">
+            <span>Selected Color:</span>
+            <div class="color-preview" [style.background-color]="tagForm.get('color')?.value"></div>
+            <input type="color" formControlName="color" class="color-input">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="closeForm()">Cancel</button>
+          <button mat-raised-button color="primary" type="submit" [disabled]="tagForm.invalid">
+            {{ editingTag ? 'Update' : 'Create' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tags Table -->
+    <div class="tags-table" *ngIf="!showForm">
+      <table mat-table [dataSource]="tags" class="full-width">
+        <!-- Name Column -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <td mat-cell *matCellDef="let tag">
+            <mat-chip [style.background-color]="tag.color" [style.color]="'white'">
+              {{ tag.name }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Color Column -->
+        <ng-container matColumnDef="color">
+          <th mat-header-cell *matHeaderCellDef>Color</th>
+          <td mat-cell *matCellDef="let tag">
+            <div class="color-display" [style.background-color]="tag.color"></div>
+            <span>{{ tag.color }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Usage Count Column -->
+        <ng-container matColumnDef="usageCount">
+          <th mat-header-cell *matHeaderCellDef>Usage</th>
+          <td mat-cell *matCellDef="let tag">{{ tag.usageCount || 0 }}</td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let tag">
+            <button mat-icon-button color="primary" (click)="openForm(tag)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteTag(tag)" [disabled]="tag.usageCount > 0">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+        <!-- No data row -->
+        <tr class="mat-row no-data-row" *matNoDataRow>
+          <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+            No tags found. Click "New Tag" to create one.
+          </td>
+        </tr>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card>

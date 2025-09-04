@@ -7,12 +7,15 @@ import { CronJobService } from './cronjob.service';
 import { HttpClientService } from './http-client.service';
 import { SchedulerService } from './scheduler.service';
 import { LogCleanupService } from './log-cleanup.service';
+import { TagService } from './tag.service';
+import { DataMigrationService } from './data-migration.service';
 import { CronJob } from '../entities/cronjob.entity';
 import { ExecutionLog } from '../entities/execution-log.entity';
+import { Tag } from '../entities/tag.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CronJob, ExecutionLog]),
+    TypeOrmModule.forFeature([CronJob, ExecutionLog, Tag]),
     HttpModule.register({
       timeout: 30000,
       maxRedirects: 5,
@@ -25,6 +28,8 @@ import { ExecutionLog } from '../entities/execution-log.entity';
     HttpClientService, 
     SchedulerService, 
     LogCleanupService,
+    TagService,
+    DataMigrationService,
   ],
   exports: [
     ScheduleParserService, 
@@ -32,6 +37,8 @@ import { ExecutionLog } from '../entities/execution-log.entity';
     HttpClientService, 
     SchedulerService, 
     LogCleanupService,
+    TagService,
+    DataMigrationService,
   ],
 })
 export class ServicesModule {}

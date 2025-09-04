@@ -1,3 +1,5 @@
+import { Tag } from './tag.model';
+
 export enum ScheduleType {
   CRON = 'cron',
   REPEAT = 'repeat',
@@ -34,6 +36,7 @@ export interface CronJob {
   updatedAt: string;
   lastExecutedAt?: string;
   executionCount: number;
+  tags?: Tag[];
 }
 
 export interface CreateCronJobDto {
@@ -49,6 +52,7 @@ export interface CreateCronJobDto {
   requestTimeout?: number; // Timeout in milliseconds
   executionMode?: ExecutionMode;
   maxConcurrent?: number;
+  tagIds?: string[];
 }
 
 export interface UpdateCronJobDto extends Partial<CreateCronJobDto> {}

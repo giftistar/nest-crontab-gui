@@ -97,6 +97,66 @@ mat-form-field {
   }
 }
 
+// Tag selection styles
+.tags-section {
+  margin-top: 16px;
+  
+  .tags-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  
+  .section-label {
+    display: block;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.87);
+    margin: 0;
+  }
+  
+  .selected-tags {
+    margin-bottom: 12px;
+    
+    mat-chip-listbox {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    mat-chip-option {
+      font-size: 14px;
+    }
+  }
+  
+  .tag-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .tag-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid #ddd;
+    }
+  }
+  
+  .no-tags-message {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 14px;
+    
+    a {
+      color: #2196f3;
+      text-decoration: none;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
 // Responsive design
 @media (max-width: 768px) {
   .content {
