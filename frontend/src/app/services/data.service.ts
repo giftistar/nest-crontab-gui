@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface DataExport {
   metadata: {
@@ -38,7 +39,7 @@ export interface ValidationResult {
   providedIn: 'root'
 })
 export class DataService {
-  private apiUrl = '/api/data';
+  private apiUrl = environment.apiUrl + '/data';
 
   constructor(private http: HttpClient) {}
 
