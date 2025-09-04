@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/bdhwan/git/nest-crontab-gui/src/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
