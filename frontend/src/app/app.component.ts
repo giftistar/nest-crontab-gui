@@ -5,8 +5,13 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CommonModule } from '@angular/common';
-import { filter } from 'rxjs/operators';
+import { filter, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { JobService } from './services/job.service';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +23,10 @@ import { filter } from 'rxjs/operators';
     MatToolbarModule,
     MatListModule,
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    MatSnackBarModule,
+    MatProgressBarModule,
+    MatTooltipModule
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
@@ -26,6 +34,7 @@ import { filter } from 'rxjs/operators';
 export class AppComponent {
   title = 'Cron Job Manager';
   currentRoute = '';
+  isRefreshing = false;
   
   navigationItems = [
     { 
@@ -54,7 +63,11 @@ export class AppComponent {
     }
   ];
 
-  constructor(private router: Router) {
+  constructor(
+    private router: Router,
+    private jobService: JobService,
+    private snackBar: MatSnackBar
+  ) {
     // Listen to route changes to update current route
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -80,5 +93,69 @@ export class AppComponent {
 
   goHome(): void {
     this.router.navigate(['/jobs']);
+  }
+
+  refreshScheduler(): void {
+    if (this.isRefreshing) {
+      return;
+    }
+
+    this.isRefreshing = true;
+    this.snackBar.open('Refreshing scheduler...', '', {
+      duration: 0,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+      panelClass: 'info-snackbar'
+    });
+
+    this.jobService.refreshScheduler()
+      .pipe(
+        catchError(error => {
+          console.error('Error refreshing scheduler:', error);
+          this.snackBar.open('Failed to refresh scheduler', 'Close', {
+            duration: 5000,
+            horizontalPosition: 'right',
+            verticalPosition: 'top',
+            panelClass: 'error-snackbar'
+          });
+          return of(null);
+        })
+      )
+      .subscribe(result => {
+        this.isRefreshing = false;
+        
+        if (result && result.success) {
+          this.snackBar.open(
+            `Scheduler refreshed! ${result.jobsLoaded} active jobs loaded`, 
+            'Close', 
+            {
+              duration: 3000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+              panelClass: 'success-snackbar'
+            }
+          );
+
+          // If we're on the jobs page, reload the jobs list
+          if (this.currentRoute === '/' || this.currentRoute.startsWith('/jobs')) {
+            // Trigger a navigation to refresh the component
+            const currentUrl = this.router.url;
+            this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+              this.router.navigate([currentUrl]);
+            });
+          }
+        } else if (result) {
+          this.snackBar.open(
+            result.message || 'Failed to refresh scheduler', 
+            'Close', 
+            {
+              duration: 5000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+              panelClass: 'error-snackbar'
+            }
+          );
+        }
+      });
   }
 }
