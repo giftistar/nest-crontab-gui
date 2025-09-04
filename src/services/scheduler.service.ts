@@ -326,4 +326,41 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
   async executeJobManually(jobId: string): Promise<void> {
     await this.executeJob(jobId, true);
   }
+
+  /**
+   * Refresh the scheduler by reloading all jobs from the database
+   * This is useful when jobs are modified directly in the database
+   */
+  async refreshScheduler(): Promise<{ success: boolean; message: string; jobsLoaded: number }> {
+    try {
+      this.logger.log('Refreshing scheduler - removing all current jobs');
+      
+      // Remove all existing jobs from the scheduler
+      this.removeAllJobs();
+      
+      // Clear the job registry
+      this.jobRegistry.clear();
+      this.runningJobs.clear();
+      
+      // Reload all active jobs from the database
+      this.logger.log('Reloading active jobs from database');
+      await this.loadActiveJobs();
+      
+      const activeJobsCount = this.jobRegistry.size;
+      this.logger.log(`Scheduler refreshed successfully. ${activeJobsCount} active jobs loaded`);
+      
+      return {
+        success: true,
+        message: `Scheduler refreshed successfully`,
+        jobsLoaded: activeJobsCount,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to refresh scheduler: ${error.message}`, error.stack);
+      return {
+        success: false,
+        message: `Failed to refresh scheduler: ${error.message}`,
+        jobsLoaded: 0,
+      };
+    }
+  }
 }
