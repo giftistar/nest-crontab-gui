@@ -36,7 +36,7 @@ export class CronJobController {
   @Get()
   @ApiOperation({
     summary: 'Get all cron jobs',
-    description: 'Retrieve a list of all cron jobs, optionally filtered by status',
+    description: 'Retrieve a list of all cron jobs, optionally filtered by status and/or tags',
   })
   @ApiQuery({
     name: 'isActive',
@@ -44,20 +44,34 @@ export class CronJobController {
     type: Boolean,
     description: 'Filter by active status',
   })
+  @ApiQuery({
+    name: 'tagIds',
+    required: false,
+    type: [String],
+    description: 'Filter by tag IDs (comma-separated)',
+    example: 'tag-id-1,tag-id-2',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of cron jobs retrieved successfully',
     type: [CronJob],
   })
-  async findAll(@Query('isActive') isActive?: string): Promise<CronJob[]> {
-    this.logger.log(`GET /api/jobs - isActive: ${isActive}`);
+  async findAll(
+    @Query('isActive') isActive?: string,
+    @Query('tagIds') tagIds?: string,
+  ): Promise<CronJob[]> {
+    this.logger.log(`GET /api/jobs - isActive: ${isActive}, tagIds: ${tagIds}`);
+    
+    // Parse tag IDs from comma-separated string
+    const tagIdArray = tagIds ? tagIds.split(',').filter(id => id.trim()) : undefined;
     
     if (isActive !== undefined) {
       const activeStatus = isActive === 'true';
+      // TODO: Update findByStatus to support tag filtering
       return this.cronJobService.findByStatus(activeStatus);
     }
     
-    return this.cronJobService.findAll();
+    return this.cronJobService.findAll(tagIdArray);
   }
 
   @Get(':id')

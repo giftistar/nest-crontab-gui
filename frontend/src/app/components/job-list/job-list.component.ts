@@ -13,16 +13,22 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSortModule, Sort } from '@angular/material/sort';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FormsModule } from '@angular/forms';
 import { Observable, catchError, of } from 'rxjs';
 
 import { JobService } from '../../services/job.service';
+import { TagService } from '../../services/tag.service';
 import { CronJob, HttpMethod, ScheduleType } from '../../models/cronjob.model';
+import { Tag } from '../../models/tag.model';
 
 @Component({
   selector: 'app-job-list',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatTableModule,
     MatButtonModule,
     MatIconModule,
@@ -34,7 +40,9 @@ import { CronJob, HttpMethod, ScheduleType } from '../../models/cronjob.model';
     MatDialogModule,
     MatSlideToggleModule,
     MatTooltipModule,
-    MatSortModule
+    MatSortModule,
+    MatSelectModule,
+    MatFormFieldModule
   ],
   templateUrl: './job-list.component.html',
   styleUrl: './job-list.component.scss'
@@ -44,7 +52,8 @@ export class JobListComponent implements OnInit {
   sortedJobs: CronJob[] = [];
   loading = true;
   displayedColumns: string[] = [
-    'name', 
+    'name',
+    'tags', 
     'url', 
     'method', 
     'schedule', 
@@ -60,21 +69,27 @@ export class JobListComponent implements OnInit {
   // Sorting
   sortActive: string = 'name';
   sortDirection: 'asc' | 'desc' = 'asc';
+  
+  // Tag filtering
+  allTags: Tag[] = [];
+  selectedTagIds: string[] = [];
 
   constructor(
     private jobService: JobService,
+    private tagService: TagService,
     private router: Router,
     private snackBar: MatSnackBar,
     private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
+    this.loadTags();
     this.loadJobs();
   }
 
   loadJobs(): void {
     this.loading = true;
-    this.jobService.getAllJobs()
+    this.jobService.getAllJobs(this.selectedTagIds)
       .pipe(
         catchError(error => {
           console.error('Error loading jobs:', error);
@@ -91,6 +106,23 @@ export class JobListComponent implements OnInit {
         this.sortData();
         this.loading = false;
       });
+  }
+
+  loadTags(): void {
+    this.tagService.getTags()
+      .pipe(
+        catchError(error => {
+          console.error('Error loading tags:', error);
+          return of([]);
+        })
+      )
+      .subscribe(tags => {
+        this.allTags = tags;
+      });
+  }
+
+  onTagFilterChange(): void {
+    this.loadJobs();
   }
 
   createJob(): void {

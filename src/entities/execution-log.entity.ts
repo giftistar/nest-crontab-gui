@@ -21,7 +21,7 @@ export class ExecutionLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: process.env.DB_TYPE === 'mysql' ? 'varchar' : 'text', length: process.env.DB_TYPE === 'mysql' ? 36 : undefined })
   jobId: string;
 
   @ManyToOne(() => CronJob, (job) => job.executionLogs, {
@@ -34,7 +34,7 @@ export class ExecutionLog {
   executedAt: Date;
 
   @Column({
-    type: 'text',
+    type: process.env.DB_TYPE === 'mysql' ? 'enum' : 'text',
     enum: ExecutionStatus,
   })
   status: ExecutionStatus;

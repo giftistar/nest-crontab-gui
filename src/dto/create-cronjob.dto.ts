@@ -273,4 +273,13 @@ export class CreateCronJobDto {
   @Min(1, { message: 'Max concurrent must be at least 1' })
   @Max(100, { message: 'Max concurrent cannot exceed 100' })
   maxConcurrent?: number = 1;
+
+  @ApiPropertyOptional({
+    description: 'Array of tag IDs to associate with the job',
+    example: ['tag-id-1', 'tag-id-2'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsString({ each: true })
+  tagIds?: string[];
 }
