@@ -24,6 +24,13 @@
     <!-- Quick Actions -->
     <div class="quick-actions">
       <button 
+        mat-button 
+        (click)="exportJobs()"
+        class="export-button">
+        <mat-icon>download</mat-icon>
+        <span class="button-text">Export</span>
+      </button>
+      <button 
         mat-raised-button 
         color="accent" 
         (click)="createNewJob()"

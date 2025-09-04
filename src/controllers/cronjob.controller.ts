@@ -25,13 +25,17 @@ import { CronJobService } from '../services/cronjob.service';
 import { CreateCronJobDto } from '../dto/create-cronjob.dto';
 import { UpdateCronJobDto } from '../dto/update-cronjob.dto';
 import { CronJob } from '../entities/cronjob.entity';
+import { DataMigrationService } from '../services/data-migration.service';
 
 @ApiTags('CronJobs')
 @Controller('api/jobs')
 export class CronJobController {
   private readonly logger = new Logger(CronJobController.name);
 
-  constructor(private readonly cronJobService: CronJobService) {}
+  constructor(
+    private readonly cronJobService: CronJobService,
+    private readonly dataMigrationService: DataMigrationService,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -58,6 +62,20 @@ export class CronJobController {
     }
     
     return this.cronJobService.findAll();
+  }
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export all cron jobs',
+    description: 'Export all cron jobs data in JSON format',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Cron jobs exported successfully',
+  })
+  async exportJobs(): Promise<any> {
+    this.logger.log('GET /api/jobs/export');
+    return this.dataMigrationService.exportAllData();
   }
 
   @Get(':id')

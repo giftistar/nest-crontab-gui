@@ -115,4 +115,10 @@ export class JobService {
   clearJobLogs(id: string): Observable<{ message: string; deletedCount: number }> {
     return this.http.delete<{ message: string; deletedCount: number }>(`${this.apiUrl}/jobs/${id}/logs`);
   }
+
+  exportJobs(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/jobs/export`, {
+      responseType: 'json'
+    });
+  }
 }

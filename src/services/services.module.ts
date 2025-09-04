@@ -7,6 +7,7 @@ import { CronJobService } from './cronjob.service';
 import { HttpClientService } from './http-client.service';
 import { SchedulerService } from './scheduler.service';
 import { LogCleanupService } from './log-cleanup.service';
+import { DataMigrationService } from './data-migration.service';
 import { CronJob } from '../entities/cronjob.entity';
 import { ExecutionLog } from '../entities/execution-log.entity';
 
@@ -25,6 +26,7 @@ import { ExecutionLog } from '../entities/execution-log.entity';
     HttpClientService, 
     SchedulerService, 
     LogCleanupService,
+    DataMigrationService,
   ],
   exports: [
     ScheduleParserService, 
@@ -32,6 +34,7 @@ import { ExecutionLog } from '../entities/execution-log.entity';
     HttpClientService, 
     SchedulerService, 
     LogCleanupService,
+    DataMigrationService,
   ],
 })
 export class ServicesModule {}
