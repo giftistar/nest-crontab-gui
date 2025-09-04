@@ -27,7 +27,7 @@ import { DatabaseConfigService } from './services/database-config.service';
     ServicesModule,
     ControllersModule,
   ],
-  controllers: [AppController],
+  controllers: [], // AppController moved to ControllersModule to ensure proper route order
   providers: [AppService],
 })
 export class AppModule {}

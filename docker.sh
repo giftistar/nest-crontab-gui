@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Build and push Docker image with multi-platform support
-VERSION=${1:-0.1.5}
+VERSION=${1:-0.1.6}
 IMAGE_NAME="giftistar/nest-crontab-gui"
 
 echo "Building Docker image: ${IMAGE_NAME}:${VERSION}"
